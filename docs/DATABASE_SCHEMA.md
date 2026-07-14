@@ -22,3 +22,13 @@ The authoritative SQL schema is in `supabase/migrations/001_initial_schema.sql`.
 RLS is enabled on all tables. Public read policies are included for the MVP public product. Writes should only be performed through server-side code using `SUPABASE_SERVICE_ROLE_KEY`.
 
 Never expose the service role key to the browser.
+
+Important invariants are enforced in SQL where possible:
+
+- probabilities and confidence values must be 0-100
+- volume and participant counts cannot be negative
+- resolved markets require a yes/no outcome
+- non-resolved markets must not carry an outcome
+- forecast correctness must match resolved state
+- duplicate forecasts for the same forecaster/market/timestamp are rejected
+- forecasts cannot be inserted into non-active markets or after the resolution date

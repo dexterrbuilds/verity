@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Trophy } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Select } from "@/components/ui/input";
 import { forecasterMetrics, getForecasterById } from "@/lib/data";
@@ -37,7 +38,7 @@ export default async function LeaderboardPage({ searchParams }: { searchParams?:
         <p className="max-w-3xl text-muted-foreground">Rankings blend accuracy, calibration, consistency, experience, and recent performance. Category boards highlight domain-specific track records.</p>
       </div>
 
-      <form className="mt-8 max-w-xs">
+      <form className="mt-8 flex max-w-md gap-3">
         <Select name="domain" defaultValue={domain} aria-label="Leaderboard domain" onChange={undefined}>
           <option value="overall">Overall</option>
           <option value="ai">AI</option>
@@ -46,6 +47,7 @@ export default async function LeaderboardPage({ searchParams }: { searchParams?:
           <option value="governance">Governance</option>
           <option value="infrastructure">Infrastructure</option>
         </Select>
+        <Button type="submit" variant="secondary">Apply</Button>
       </form>
 
       <Card className="mt-6 overflow-hidden">

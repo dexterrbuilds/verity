@@ -58,7 +58,7 @@ export default async function MarketDetailPage({ params }: { params: Promise<Par
           <CardContent className="grid grid-cols-2 gap-4">
             <p><span className="block text-3xl font-bold">{formatPercent(market.currentProbability)}</span><span className="text-sm text-muted-foreground">Current probability</span></p>
             <p><span className="block text-3xl font-bold">{formatPercent(market.conviction.reputationWeightedForecast)}</span><span className="text-sm text-muted-foreground">Weighted forecast</span></p>
-            <p><span className="block font-semibold">{formatCompact(market.volume)}</span><span className="text-sm text-muted-foreground">Volume</span></p>
+            <p><span className="block font-semibold">{formatCompact(market.volume)}</span><span className="text-sm text-muted-foreground">Demo volume</span></p>
             <p><span className="block font-semibold">{market.participantCount}</span><span className="text-sm text-muted-foreground">Participants</span></p>
             <p><span className="block font-semibold">{formatDate(market.resolutionDate)}</span><span className="text-sm text-muted-foreground">Resolution date</span></p>
             <p className="flex items-center gap-2"><Users className="h-4 w-4 text-accent" /><span>{market.conviction.trackedForecasterCount} tracked</span></p>
@@ -72,7 +72,7 @@ export default async function MarketDetailPage({ params }: { params: Promise<Par
           <CardContent><ProbabilityChart data={history} /></CardContent>
         </Card>
         <Card>
-          <CardHeader><h2 className="font-semibold">What credible forecasters think</h2></CardHeader>
+          <CardHeader><h2 className="font-semibold">What tracked demo forecasters think</h2></CardHeader>
           <CardContent className="space-y-3 text-sm">
             <p className="flex justify-between"><span>Average tracked forecast</span><strong>{formatPercent(market.conviction.averageTrackedForecast)}</strong></p>
             <p className="flex justify-between"><span>Reputation-weighted forecast</span><strong>{formatPercent(market.conviction.reputationWeightedForecast)}</strong></p>

@@ -110,6 +110,10 @@ export const forecasts: Forecast[] = markets.flatMap((market, marketIndex) => {
     const position = predictedProbability > 55 ? "yes" : predictedProbability < 45 ? "no" : "neutral";
     const isResolved = market.resolutionStatus === "resolved";
     const wasCorrect = isResolved ? (market.resolutionOutcome === "yes" ? predictedProbability >= 50 : predictedProbability < 50) : null;
+    const generatedDate = `2026-${String(((marketIndex + forecasterIndex) % 6) + 1).padStart(2, "0")}-${String(((signal % 20) + 5)).padStart(2, "0")}`;
+    const safeForecastDate = isResolved
+      ? new Date(new Date(market.resolutionDate).getTime() - (30 + forecasterIndex) * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+      : generatedDate;
     return {
       id: `fc-${market.id}-${forecaster.id}`,
       forecasterId: forecaster.id,
@@ -118,7 +122,7 @@ export const forecasts: Forecast[] = markets.flatMap((market, marketIndex) => {
       confidence,
       position,
       reasoning: reasons[signal % reasons.length],
-      forecastedAt: `2026-${String(((marketIndex + forecasterIndex) % 6) + 1).padStart(2, "0")}-${String(((signal % 20) + 5)).padStart(2, "0")}`,
+      forecastedAt: safeForecastDate,
       isResolved,
       wasCorrect,
       scoreImpact: isResolved ? (wasCorrect ? 1 + (confidence - 50) / 40 : -1 - (confidence - 50) / 45) : 0

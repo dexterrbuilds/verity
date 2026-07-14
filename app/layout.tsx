@@ -9,10 +9,10 @@ export const metadata: Metadata = {
     default: "Verity | Crypto Forecaster Reputation",
     template: "%s | Verity"
   },
-  description: "Find the most credible forecasters in crypto and track what they are predicting.",
+  description: "Demo MVP for tracking market forecasts, initial reputation scores, and forecaster conviction.",
   openGraph: {
     title: "Verity",
-    description: "A market intelligence and forecaster reputation MVP for onchain markets.",
+    description: "A demo market intelligence and forecaster reputation MVP for onchain markets.",
     type: "website"
   }
 };

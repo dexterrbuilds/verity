@@ -30,7 +30,7 @@ export function MarketCard({ market }: { market: EnrichedMarket }) {
           </div>
           <div className="mt-auto grid grid-cols-2 gap-3 text-sm text-muted-foreground">
             <p><span className="text-foreground">{market.protocol?.name}</span><br />{market.category?.name}</p>
-            <p><span className="text-foreground">{formatCompact(market.volume)}</span><br />volume</p>
+            <p><span className="text-foreground">{formatCompact(market.volume)}</span><br />demo volume</p>
             <p className="flex items-center gap-1"><Users className="h-3.5 w-3.5" />{market.participantCount} participants</p>
             <p><span className="text-foreground">{market.conviction.trackedForecasterCount}</span><br />forecasters</p>
             <p><span className="text-foreground">{formatPercent(market.conviction.reputationWeightedForecast)}</span><br />weighted conviction</p>

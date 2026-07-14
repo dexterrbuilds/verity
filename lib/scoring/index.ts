@@ -1,6 +1,8 @@
 import type { Forecast, ForecasterMetrics, Market, MarketConviction } from "@/types";
 import { categories } from "@/lib/data/seed";
 
+const INFLUENCE_CAP = 0.35;
+
 function clamp(value: number, min = 0, max = 100) {
   return Math.max(min, Math.min(max, value));
 }
@@ -9,73 +11,132 @@ function mean(values: number[]) {
   return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
 }
 
-function resolvedForecasts(forecasts: Forecast[]) {
-  return forecasts.filter((forecast) => forecast.isResolved && forecast.wasCorrect !== null);
+function assertValidProbability(value: number, label: string) {
+  if (!Number.isFinite(value) || value < 0 || value > 100) {
+    throw new RangeError(`${label} must be between 0 and 100.`);
+  }
 }
 
-export function calculateAccuracy(forecasts: Forecast[]) {
-  const resolved = resolvedForecasts(forecasts);
+function marketById(markets: Market[]) {
+  return new Map(markets.map((market) => [market.id, market]));
+}
+
+function normalizeWithCap(weights: number[], cap: number) {
+  if (!weights.length) return [];
+  if (weights.length * cap < 1) return weights.map(() => 1 / weights.length);
+
+  const total = weights.reduce((sum, weight) => sum + weight, 0);
+  if (!total) return weights.map(() => 1 / weights.length);
+
+  const shares = weights.map((weight) => weight / total);
+  const capped = new Array<number>(weights.length).fill(0);
+  const remaining = new Set(weights.map((_, index) => index));
+  let remainingShare = 1;
+
+  while (remaining.size) {
+    const remainingRaw = Array.from(remaining).reduce((sum, index) => sum + shares[index], 0);
+    let cappedThisRound = false;
+    for (const index of Array.from(remaining)) {
+      const redistributed = remainingRaw ? (shares[index] / remainingRaw) * remainingShare : remainingShare / remaining.size;
+      if (redistributed > cap) {
+        capped[index] = cap;
+        remaining.delete(index);
+        remainingShare -= cap;
+        cappedThisRound = true;
+      }
+    }
+    if (!cappedThisRound) {
+      for (const index of remaining) {
+        capped[index] = remainingRaw ? (shares[index] / remainingRaw) * remainingShare : remainingShare / remaining.size;
+      }
+      break;
+    }
+  }
+
+  return capped;
+}
+
+type ScoredForecast = Forecast & { outcome: "yes" | "no"; market: Market };
+
+function resolvedForecasts(forecasts: Forecast[], markets: Market[]): ScoredForecast[] {
+  const marketsById = marketById(markets);
+  return forecasts.flatMap((forecast) => {
+    assertValidProbability(forecast.predictedProbability, "predictedProbability");
+    assertValidProbability(forecast.confidence, "confidence");
+    const market = marketsById.get(forecast.marketId);
+    if (!market || market.resolutionStatus !== "resolved" || !market.resolutionOutcome) return [];
+    if (Date.parse(forecast.forecastedAt) > Date.parse(market.resolutionDate)) {
+      throw new RangeError("forecastedAt cannot be after market resolutionDate.");
+    }
+    return [{ ...forecast, market, outcome: market.resolutionOutcome }];
+  });
+}
+
+function directionalForecasts(forecasts: Forecast[], markets: Market[]) {
+  return resolvedForecasts(forecasts, markets).filter((forecast) => forecast.position !== "neutral");
+}
+
+function isDirectionallyCorrect(forecast: ScoredForecast) {
+  return (forecast.position === "yes" && forecast.outcome === "yes") || (forecast.position === "no" && forecast.outcome === "no");
+}
+
+export function calculateAccuracy(forecasts: Forecast[], markets: Market[] = []) {
+  const resolved = directionalForecasts(forecasts, markets);
   if (!resolved.length) return 0;
-  return (resolved.filter((forecast) => forecast.wasCorrect).length / resolved.length) * 100;
+  return (resolved.filter(isDirectionallyCorrect).length / resolved.length) * 100;
 }
 
-export function calculateCalibration(forecasts: Forecast[]) {
-  const resolved = resolvedForecasts(forecasts);
+export function calculateCalibration(forecasts: Forecast[], markets: Market[] = []) {
+  const resolved = resolvedForecasts(forecasts, markets);
   if (!resolved.length) return 0;
   const brier = mean(
     resolved.map((forecast) => {
-      const predicted = forecast.predictedProbability / 100;
-      const outcome = forecast.wasCorrect
-        ? forecast.predictedProbability >= 50
-          ? 1
-          : 0
-        : forecast.predictedProbability >= 50
-          ? 0
-          : 1;
-      return (predicted - outcome) ** 2;
+      const predictedYes = forecast.predictedProbability / 100;
+      const outcome = forecast.outcome === "yes" ? 1 : 0;
+      return (predictedYes - outcome) ** 2;
     })
   );
   return clamp((1 - brier) * 100);
 }
 
-export function calculateExperience(forecasts: Forecast[]) {
-  const resolved = resolvedForecasts(forecasts).length;
+export function calculateExperience(forecasts: Forecast[], markets: Market[] = []) {
+  const resolved = resolvedForecasts(forecasts, markets).length;
   return clamp((1 - Math.exp(-resolved / 18)) * 100);
 }
 
-export function calculateConsistency(forecasts: Forecast[]) {
-  const resolved = resolvedForecasts(forecasts);
+export function calculateConsistency(forecasts: Forecast[], markets: Market[] = []) {
+  const resolved = directionalForecasts(forecasts, markets);
   if (resolved.length < 3) return 45;
   const ordered = [...resolved].sort((a, b) => a.forecastedAt.localeCompare(b.forecastedAt));
   const chunks = [ordered.slice(0, Math.ceil(ordered.length / 2)), ordered.slice(Math.ceil(ordered.length / 2))];
-  const rates = chunks.map(calculateAccuracy);
+  const rates = chunks.map((chunk) => calculateAccuracy(chunk, markets));
   return clamp(100 - Math.abs(rates[0] - rates[1]));
 }
 
-export function calculateRecentPerformance(forecasts: Forecast[]) {
-  const recent = resolvedForecasts(forecasts)
+export function calculateRecentPerformance(forecasts: Forecast[], markets: Market[] = []) {
+  const recent = directionalForecasts(forecasts, markets)
     .sort((a, b) => b.forecastedAt.localeCompare(a.forecastedAt))
     .slice(0, 8);
-  return recent.length ? calculateAccuracy(recent) : 45;
+  return recent.length ? calculateAccuracy(recent, markets) : 45;
 }
 
-export function currentStreak(forecasts: Forecast[]) {
+export function currentStreak(forecasts: Forecast[], markets: Market[] = []) {
   let streak = 0;
-  for (const forecast of resolvedForecasts(forecasts).sort((a, b) => b.forecastedAt.localeCompare(a.forecastedAt))) {
-    if (!forecast.wasCorrect) break;
+  for (const forecast of directionalForecasts(forecasts, markets).sort((a, b) => b.forecastedAt.localeCompare(a.forecastedAt))) {
+    if (!isDirectionallyCorrect(forecast)) break;
     streak += 1;
   }
   return streak;
 }
 
-export function calculateVerityScore(forecasts: Forecast[]) {
-  const resolved = resolvedForecasts(forecasts).length;
+export function calculateVerityScore(forecasts: Forecast[], markets: Market[] = []) {
+  const resolved = resolvedForecasts(forecasts, markets).length;
   const raw =
-    calculateAccuracy(forecasts) * 0.35 +
-    calculateCalibration(forecasts) * 0.25 +
-    calculateConsistency(forecasts) * 0.15 +
-    calculateExperience(forecasts) * 0.15 +
-    calculateRecentPerformance(forecasts) * 0.1;
+    calculateAccuracy(forecasts, markets) * 0.35 +
+    calculateCalibration(forecasts, markets) * 0.25 +
+    calculateConsistency(forecasts, markets) * 0.15 +
+    calculateExperience(forecasts, markets) * 0.15 +
+    calculateRecentPerformance(forecasts, markets) * 0.1;
 
   // Minimum-sample adjustment keeps one lucky forecast from outranking steady forecasters.
   const sampleWeight = Math.min(1, resolved / 12);
@@ -92,26 +153,29 @@ export function buildForecasterMetrics(allForecasts: Forecast[], markets: Market
     const categoryAccuracy: Record<string, number> = {};
     for (const category of categories) {
       const categoryMarketIds = new Set(markets.filter((market) => market.categoryId === category.id).map((market) => market.id));
-      categoryAccuracy[category.name] = calculateAccuracy(items.filter((forecast) => categoryMarketIds.has(forecast.marketId)));
+      categoryAccuracy[category.name] = calculateAccuracy(items.filter((forecast) => categoryMarketIds.has(forecast.marketId)), markets);
     }
 
     const trend = items
-      .filter((forecast) => forecast.isResolved)
+      .filter((forecast) => resolvedForecasts([forecast], markets).length > 0 && forecast.position !== "neutral")
       .sort((a, b) => a.forecastedAt.localeCompare(b.forecastedAt))
       .slice(-6)
-      .map((forecast) => (forecast.wasCorrect ? 1 : -1));
+      .map((forecast) => {
+        const scored = resolvedForecasts([forecast], markets)[0];
+        return scored && isDirectionallyCorrect(scored) ? 1 : -1;
+      });
 
     return {
       forecasterId,
-      verityScore: calculateVerityScore(items),
-      accuracy: calculateAccuracy(items),
-      calibration: calculateCalibration(items),
-      consistency: calculateConsistency(items),
-      experience: calculateExperience(items),
-      recentPerformance: calculateRecentPerformance(items),
+      verityScore: calculateVerityScore(items, markets),
+      accuracy: calculateAccuracy(items, markets),
+      calibration: calculateCalibration(items, markets),
+      consistency: calculateConsistency(items, markets),
+      experience: calculateExperience(items, markets),
+      recentPerformance: calculateRecentPerformance(items, markets),
       totalForecasts: items.length,
-      resolvedForecasts: resolvedForecasts(items).length,
-      currentStreak: currentStreak(items),
+      resolvedForecasts: resolvedForecasts(items, markets).length,
+      currentStreak: currentStreak(items, markets),
       categoryAccuracy,
       trend,
       rank: 0
@@ -143,18 +207,21 @@ export function calculateMarketConviction(
   const metricByForecaster = new Map(metrics.map((metric) => [metric.forecasterId, metric]));
   const categoryName = categories.find((category) => category.id === market.categoryId)?.name ?? "Crypto";
   const weighted = marketForecasts.map((forecast) => {
+    assertValidProbability(forecast.predictedProbability, "predictedProbability");
+    assertValidProbability(forecast.confidence, "confidence");
     const metric = metricByForecaster.get(forecast.forecasterId);
     const categoryStrength = metric?.categoryAccuracy[categoryName] ?? 50;
-    const weight = Math.min(0.18, ((metric?.verityScore ?? 50) / 100) * 0.11 + ((metric?.experience ?? 30) / 100) * 0.04 + (categoryStrength / 100) * 0.03);
+    const weight = ((metric?.verityScore ?? 50) / 100) * 0.11 + ((metric?.experience ?? 30) / 100) * 0.04 + (categoryStrength / 100) * 0.03;
     return { probability: forecast.predictedProbability, weight };
   });
-  const totalWeight = weighted.reduce((sum, item) => sum + item.weight, 0);
+  const cappedShares = normalizeWithCap(weighted.map((item) => item.weight), INFLUENCE_CAP);
+  const totalWeight = cappedShares.reduce((sum, item) => sum + item, 0);
   const highestConfidence = [...marketForecasts].sort((a, b) => b.confidence - a.confidence)[0];
 
   return {
     averageTrackedForecast: mean(marketForecasts.map((forecast) => forecast.predictedProbability)),
     reputationWeightedForecast: totalWeight
-      ? weighted.reduce((sum, item) => sum + item.probability * item.weight, 0) / totalWeight
+      ? weighted.reduce((sum, item, index) => sum + item.probability * cappedShares[index], 0) / totalWeight
       : market.currentProbability,
     highestConfidencePosition: highestConfidence.position,
     bullishShare: (marketForecasts.filter((forecast) => forecast.predictedProbability >= 55).length / marketForecasts.length) * 100,

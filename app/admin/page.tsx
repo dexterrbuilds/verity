@@ -18,6 +18,7 @@ import {
 import { isAdminAuthenticated } from "@/features/admin/auth";
 import { forecasts, forecasters, markets } from "@/lib/data/seed";
 import { platformStats } from "@/lib/data";
+import { adminConfigIssue, dataMode, persistenceIssue } from "@/lib/env";
 import { formatPercent } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -27,12 +28,15 @@ export const metadata: Metadata = {
 
 export default async function AdminPage() {
   const authenticated = await isAdminAuthenticated();
+  const configIssue = adminConfigIssue();
+  const writeIssue = persistenceIssue() ?? (dataMode() === "demo" ? "Demo mode is read-only; connected Supabase reads/writes are not enabled." : null);
   if (!authenticated) {
     return (
       <section className="container-page py-16">
         <div className="mx-auto max-w-xl text-center">
           <h1 className="text-3xl font-bold tracking-tight">Verity admin</h1>
           <p className="mt-3 text-muted-foreground">Protected MVP route. Configure ADMIN_PASSWORD and SESSION_SECRET to sign in.</p>
+          {configIssue ? <p className="mt-3 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">{configIssue}</p> : null}
         </div>
         <LoginForm />
       </section>
@@ -46,6 +50,7 @@ export default async function AdminPage() {
         <div>
           <h1 className="text-4xl font-bold tracking-tight">Admin dashboard</h1>
           <p className="mt-2 text-muted-foreground">Manage MVP data through validated server actions. Supabase persistence activates when service credentials are configured.</p>
+          {writeIssue ? <p className="mt-3 rounded-md border border-warning/40 bg-warning/10 p-3 text-sm">{writeIssue}</p> : null}
         </div>
         <form action={logoutAction}>
           <Button variant="secondary">Log out</Button>

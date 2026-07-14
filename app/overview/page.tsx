@@ -24,7 +24,7 @@ export default function OverviewPage() {
       <div className="flex flex-col gap-2">
         <Badge tone="accent">Overview</Badge>
         <h1 className="text-4xl font-bold tracking-tight">Market intelligence dashboard</h1>
-        <p className="max-w-3xl text-muted-foreground">A seeded view of important markets, credible forecasters, and reputation-weighted conviction.</p>
+        <p className="max-w-3xl text-muted-foreground">A seeded demo view of important markets, fictional forecasters, and reputation-weighted conviction.</p>
       </div>
 
       <div className="mt-8 grid gap-4 md:grid-cols-4">

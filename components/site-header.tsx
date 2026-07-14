@@ -2,6 +2,7 @@ import Link from "next/link";
 import { BarChart3, Search } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { dataMode } from "@/lib/env";
 
 const navItems = [
   ["Overview", "/overview"],
@@ -12,8 +13,14 @@ const navItems = [
 ] as const;
 
 export function SiteHeader() {
+  const mode = dataMode();
   return (
     <header className="sticky top-0 z-40 border-b bg-background/88 backdrop-blur">
+      <div className="border-b bg-accent/10 py-2 text-center text-xs text-muted-foreground">
+        {mode === "demo"
+          ? "Demo data mode: rankings, markets, volumes, and forecaster identities are illustrative for MVP validation."
+          : "Connected data mode: verify Supabase reads and writes before public launch."}
+      </div>
       <div className="container-page flex h-16 items-center gap-4">
         <Link href="/" className="flex items-center gap-2 font-bold tracking-tight" aria-label="Verity home">
           <span className="flex h-8 w-8 items-center justify-center rounded-md bg-accent text-accent-foreground">
@@ -28,7 +35,7 @@ export function SiteHeader() {
             </Link>
           ))}
         </nav>
-        <form action="/markets" className="ml-auto hidden min-w-64 items-center gap-2 rounded-md border bg-card px-3 md:flex">
+        <form action="/markets" className="ml-auto hidden min-w-64 items-center gap-2 rounded-md border bg-card px-3 lg:flex">
           <Search className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
           <input
             name="q"
@@ -38,7 +45,7 @@ export function SiteHeader() {
           />
         </form>
         <ThemeToggle />
-        <ButtonLink href="/leaderboard" className="hidden sm:inline-flex">Explore Rankings</ButtonLink>
+        <ButtonLink href="/leaderboard" className="hidden lg:inline-flex">Explore Rankings</ButtonLink>
       </div>
       <nav className="container-page flex gap-1 overflow-x-auto pb-3 md:hidden" aria-label="Mobile navigation">
         {navItems.map(([label, href]) => (

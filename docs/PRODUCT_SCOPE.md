@@ -30,3 +30,5 @@ Verity is a market intelligence and forecaster reputation MVP for onchain market
 ## MVP Principle
 
 The first product should be credible enough for demos and customer interviews without pretending the system is already a mature protocol.
+
+The current implementation is explicitly demo-first. Public pages use fictional local seed data. Supabase-backed persistence is not complete until reads, writes, admin forms, and scoring all operate on the same persisted dataset.

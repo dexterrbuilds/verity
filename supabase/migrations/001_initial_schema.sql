@@ -46,14 +46,18 @@ create table public.markets (
   source_url text,
   current_probability numeric(5,2) not null check (current_probability >= 0 and current_probability <= 100),
   previous_probability numeric(5,2) not null check (previous_probability >= 0 and previous_probability <= 100),
-  volume numeric(20,2) not null default 0,
-  participant_count integer not null default 0,
+  volume numeric(20,2) not null default 0 check (volume >= 0),
+  participant_count integer not null default 0 check (participant_count >= 0),
   resolution_date timestamptz,
   resolution_status resolution_status not null default 'active',
   resolution_outcome forecast_position,
   resolution_rules text,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  constraint markets_resolution_outcome_check check (
+    (resolution_status = 'resolved' and resolution_outcome in ('yes', 'no'))
+    or (resolution_status <> 'resolved' and resolution_outcome is null)
+  )
 );
 
 create table public.forecasts (
@@ -69,7 +73,12 @@ create table public.forecasts (
   was_correct boolean,
   score_impact numeric(7,3) not null default 0,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  constraint forecasts_correctness_resolution_check check (
+    (is_resolved = true and was_correct is not null)
+    or (is_resolved = false and was_correct is null)
+  ),
+  constraint forecasts_unique_timestamp unique (forecaster_id, market_id, forecasted_at)
 );
 
 create table public.market_probability_history (
@@ -98,6 +107,42 @@ create index markets_status_resolution_date_idx on public.markets(resolution_sta
 create index markets_probability_change_idx on public.markets((abs(current_probability - previous_probability)));
 create index market_probability_history_market_recorded_idx on public.market_probability_history(market_id, recorded_at);
 create index insights_featured_published_idx on public.insights(is_featured, published_at desc);
+
+create or replace function public.set_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+create trigger set_forecasters_updated_at before update on public.forecasters for each row execute function public.set_updated_at();
+create trigger set_protocols_updated_at before update on public.protocols for each row execute function public.set_updated_at();
+create trigger set_markets_updated_at before update on public.markets for each row execute function public.set_updated_at();
+create trigger set_forecasts_updated_at before update on public.forecasts for each row execute function public.set_updated_at();
+create trigger set_insights_updated_at before update on public.insights for each row execute function public.set_updated_at();
+
+create or replace function public.reject_forecast_after_resolution()
+returns trigger
+language plpgsql
+as $$
+declare
+  market_record public.markets%rowtype;
+begin
+  select * into market_record from public.markets where id = new.market_id;
+  if market_record.resolution_status <> 'active' then
+    raise exception 'forecasts can only be added to active markets';
+  end if;
+  if market_record.resolution_date is not null and new.forecasted_at > market_record.resolution_date then
+    raise exception 'forecasted_at cannot be after market resolution_date';
+  end if;
+  return new;
+end;
+$$;
+
+create trigger reject_forecast_after_resolution before insert on public.forecasts for each row execute function public.reject_forecast_after_resolution();
 
 alter table public.forecasters enable row level security;
 alter table public.protocols enable row level security;

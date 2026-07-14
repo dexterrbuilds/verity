@@ -73,6 +73,11 @@ export function MarketForm() {
         <option value="resolved">Resolved</option>
         <option value="cancelled">Cancelled</option>
       </Select>
+      <Select name="resolutionOutcome" defaultValue="">
+        <option value="">No outcome</option>
+        <option value="yes">Yes</option>
+        <option value="no">No</option>
+      </Select>
       <Textarea name="resolutionRules" placeholder="Resolution rules" required />
       <Status state={state} />
       <Button disabled={pending}>{pending ? "Saving..." : "Add Market"}</Button>
@@ -99,6 +104,7 @@ export function ForecastForm({ forecasters, markets }: { forecasters: Forecaster
           <option value="neutral">Neutral</option>
         </Select>
       </div>
+      <Input name="forecastedAt" type="datetime-local" required />
       <Textarea name="reasoning" placeholder="Short reasoning" required />
       <Status state={state} />
       <Button disabled={pending}>{pending ? "Saving..." : "Add Forecast"}</Button>
@@ -148,6 +154,11 @@ export function EditMarketForm({ markets }: { markets: Market[] }) {
         <option value="resolved">Resolved</option>
         <option value="cancelled">Cancelled</option>
       </Select>
+      <Select name="resolutionOutcome" defaultValue={first?.resolutionOutcome ?? ""}>
+        <option value="">No outcome</option>
+        <option value="yes">Yes</option>
+        <option value="no">No</option>
+      </Select>
       <Textarea name="resolutionRules" defaultValue={first?.resolutionRules} placeholder="Resolution rules" required />
       <Status state={state} />
       <Button disabled={pending}>{pending ? "Saving..." : "Edit Market"}</Button>
@@ -169,7 +180,6 @@ export function ResolveMarketForm({ markets }: { markets: Market[] }) {
       <Select name="resolutionOutcome" defaultValue="yes">
         <option value="yes">Yes</option>
         <option value="no">No</option>
-        <option value="neutral">Neutral</option>
       </Select>
       <Status state={state} />
       <Button disabled={pending}>{pending ? "Saving..." : "Resolve Market"}</Button>
