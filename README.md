@@ -100,6 +100,8 @@ We're focused on validating the reputation layer before expanding into broader c
 
 X: **@UseVerity**
 
+More details coming soon.
+
 ---
 
 **Signal over noise.**
