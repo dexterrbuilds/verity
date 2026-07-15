@@ -1,148 +1,105 @@
 # Verity
 
-Verity is a lean MVP for market intelligence and forecaster reputation in the Solana/onchain markets ecosystem.
+**The reputation and intelligence layer for onchain markets.**
 
-Product statement: **Find the most credible forecasters in crypto and track what they are predicting.**
+Markets are becoming permissionless.
 
-This first version can run in local demo mode with fictional data or connected mode with Supabase-backed records. It is not a prediction market, trading venue, token product, wallet app, SDK, public API, DAO executor, or automated indexer.
+As new prediction markets, perpetual exchanges, and forecasting applications emerge, every protocol is rebuilding the same primitives from scratch:
 
-## Tech Stack
+* Reputation
+* Discovery
+* Identity
+* Market intelligence
 
-- Next.js App Router
-- TypeScript
-- Tailwind CSS
-- shadcn-style local UI primitives
-- Supabase/PostgreSQL schema
-- Zod validation
-- Lucide icons
-- Recharts for useful charts
+Verity exists to unify them.
 
-## Local Setup
+Rather than competing with market creators, Verity provides the shared coordination layer that helps people discover markets, identify credible forecasters, and understand where informed conviction is moving across the ecosystem.
 
-```bash
-npm install
-npm run dev
-```
+## Why Verity?
 
-Open `http://localhost:3000`.
+Today's market applications can tell you **what the market believes**.
 
-## Environment Variables
+They rarely tell you:
 
-Copy `.env.example` to `.env.local`.
+* Who has consistently been right
+* Which forecasters have proven expertise in specific domains
+* How conviction is changing over time
+* Which markets deserve attention
 
-```env
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
-ADMIN_PASSWORD=
-SESSION_SECRET=
-NEXT_PUBLIC_SITE_URL=http://localhost:3000
-NEXT_PUBLIC_DATA_MODE=connected
-```
+Verity is building the infrastructure to answer those questions.
 
-`ADMIN_PASSWORD` must be at least 12 characters and `SESSION_SECRET` must be at least 32 characters for admin login to work.
+## Core Principles
 
-Generate a session secret with:
+### Reputation
 
-```bash
-node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
-```
+Followers aren't reputation.
 
-`NEXT_PUBLIC_DATA_MODE=demo` is explicit demo mode. In demo mode, public pages read local seed data and admin mutations are blocked as read-only so changes are not silently lost.
+Engagement isn't reputation.
 
-`NEXT_PUBLIC_DATA_MODE=connected` enables Supabase-backed reads and writes. Connected mode requires:
+Reputation should be earned through forecasting performance, consistency, calibration, and domain expertise.
 
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY`
+### Discovery
 
-On Vercel production deployments, incomplete Supabase configuration fails clearly instead of silently falling back to demo data.
+As the number of market applications grows, discovering meaningful markets becomes increasingly difficult.
 
-## Supabase Setup
+Verity aims to make onchain markets searchable, navigable, and easier to understand.
 
-Recommended flow:
+### Intelligence
 
-```bash
-supabase link --project-ref <your-project-ref>
-supabase db push
-npm run verify:supabase
-npm run seed:supabase
-```
+Markets generate an enormous amount of information.
 
-If you do not use the Supabase CLI, run the migration files in `supabase/migrations/` in lexical order through the Supabase SQL Editor.
+Verity transforms that information into actionable intelligence by surfacing trends, forecasting performance, and changes in market conviction.
 
-Public reads are allowed by RLS policies. Writes should go through server-side code using `SUPABASE_SERVICE_ROLE_KEY`.
+### Coordination
 
-Public and admin screens read through the repository layer in `lib/data/`. Demo mode uses `lib/data/seed.ts`; connected mode reads from Supabase via public RLS policies. Admin mutations use the service role only on the server.
+The future of onchain markets should be connected, not fragmented.
 
-## Seed Instructions
+Verity is designed to become a shared layer that many market applications can build on rather than another isolated destination.
 
-The seed dataset includes:
+## MVP
 
-- 15 fictional forecasters
-- 5 demo-labelled protocols
-- 7 categories
-- 25 markets
-- 120+ generated forecasts
-- probability history
-- market insights
+The first version of Verity focuses on validating one simple idea:
 
-Check counts with:
+> Can reputation improve the way people use prediction markets?
 
-```bash
-npm run seed
-```
+The MVP includes:
 
-Populate a connected Supabase project with the same dataset:
+* Market discovery
+* Forecaster profiles
+* Reputation-based rankings
+* Leaderboards
+* Reputation-weighted market conviction
+* Transparent scoring methodology
+* Administrative tools for curated market data
 
-```bash
-npm run seed:supabase
-```
+This early version uses curated data while the platform evolves toward broader integrations.
 
-The connected seed uses stable UUIDs, schema preflight checks, and upserts, so it is safe to run multiple times. Seeded records are labelled `data_origin=demo` and `verification_status=unverified`.
+## Long-Term Vision
 
-## Admin Access
+Our long-term vision is to become the shared coordination layer for onchain markets.
 
-The admin route exists at `/admin` and is not linked in public navigation. It uses a server-side password check and HTTP-only signed session cookie.
+As ecosystems such as Percolator and other market infrastructures grow, Verity aims to provide:
 
-Configure:
+* Portable market identity
+* Cross-platform reputation
+* Market discovery
+* Reputation-weighted intelligence
+* Shared coordination primitives for market applications
 
-```env
-ADMIN_PASSWORD=change-this
-SESSION_SECRET=at-least-32-random-characters
-```
+We believe the greatest opportunity isn't building another market.
 
-## Deployment
+It's helping every market become more useful.
 
-Deploy to Vercel with the same environment variables. Set `NEXT_PUBLIC_SITE_URL` to the production domain so metadata, sitemap, and robots output canonical production URLs.
+## Status
 
-## Scoring Methodology
+Verity is currently in active development.
 
-The initial Verity score is not final. It uses:
+We're focused on validating the reputation layer before expanding into broader coordination infrastructure.
 
-- 35% accuracy
-- 25% calibration
-- 15% consistency
-- 15% experience
-- 10% recent performance
+## Follow the Project
 
-A minimum-sample adjustment keeps small lucky samples from ranking first. Market conviction weights forecasts by Verity score, experience, and category performance with a cap on individual influence.
+X: **@UseVerity**
 
-## Current Limitations
+---
 
-- Demo data is fictional and manually seeded.
-- Admin forms validate, require authentication, and are read-only in demo mode.
-- Connected mode calculates scores at read time from persisted markets and forecasts.
-- The repository currently uses bounded read-time queries suitable for MVP-scale datasets, not a materialized scoring cache.
-- Forecasts use the simple MVP rule: one forecast per forecaster per market, editable until market resolution.
-- Seeded demonstration records are clearly distinguished from manually curated records with provenance fields.
-- No wallet connection, onchain execution, token functionality, automated indexing, public API, AI analysis, or SDK.
-- Scoring assumptions should be revisited with real samples and customer feedback.
-
-## Suggested Next Steps
-
-- Add CSV import for forecasts and market history.
-- Add real source links after selecting initial partner protocols.
-- Add event transport for the analytics abstraction.
-- Add admin CRUD integration tests against a disposable Supabase database.
-- Add pagination and materialized score caching before large datasets.
+**Signal over noise.**
