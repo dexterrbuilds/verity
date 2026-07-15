@@ -4,8 +4,12 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   CategoryForm,
+  EditCategoryForm,
   EditForecasterForm,
+  EditForecastForm,
+  EditInsightForm,
   EditMarketForm,
+  EditProtocolForm,
   ForecasterForm,
   ForecastForm,
   InsightForm,
@@ -16,9 +20,8 @@ import {
   ResolveMarketForm
 } from "@/features/admin/admin-forms";
 import { isAdminAuthenticated } from "@/features/admin/auth";
-import { forecasts, forecasters, markets } from "@/lib/data/seed";
-import { platformStats } from "@/lib/data";
-import { adminConfigIssue, dataMode, persistenceIssue } from "@/lib/env";
+import { getAdminData, getDataMode, getModeError } from "@/lib/data";
+import { adminConfigIssue } from "@/lib/env";
 import { formatPercent } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -29,7 +32,8 @@ export const metadata: Metadata = {
 export default async function AdminPage() {
   const authenticated = await isAdminAuthenticated();
   const configIssue = adminConfigIssue();
-  const writeIssue = persistenceIssue() ?? (dataMode() === "demo" ? "Demo mode is read-only; connected Supabase reads/writes are not enabled." : null);
+  const mode = getDataMode();
+  const writeIssue = getModeError() ?? (mode === "demo" ? "Demo mode is read-only; connected Supabase reads/writes are not enabled." : null);
   if (!authenticated) {
     return (
       <section className="container-page py-16">
@@ -43,7 +47,7 @@ export default async function AdminPage() {
     );
   }
 
-  const stats = platformStats();
+  const { stats, forecasters, markets, forecasts, protocols, categories, insights } = await getAdminData();
   return (
     <section className="container-page py-10">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -120,7 +124,32 @@ export default async function AdminPage() {
           <CardHeader><h2 className="font-semibold">Add insight</h2></CardHeader>
           <CardContent><InsightForm /></CardContent>
         </Card>
+        <Card>
+          <CardHeader><h2 className="font-semibold">Edit forecast</h2></CardHeader>
+          <CardContent><EditForecastForm forecasts={forecasts} forecasters={forecasters} markets={markets} /></CardContent>
+        </Card>
+        <Card>
+          <CardHeader><h2 className="font-semibold">Edit protocol</h2></CardHeader>
+          <CardContent><EditProtocolForm protocols={protocols} /></CardContent>
+        </Card>
+        <Card>
+          <CardHeader><h2 className="font-semibold">Edit category</h2></CardHeader>
+          <CardContent><EditCategoryForm categories={categories} /></CardContent>
+        </Card>
+        <Card>
+          <CardHeader><h2 className="font-semibold">Edit insight</h2></CardHeader>
+          <CardContent><EditInsightForm insights={insights} /></CardContent>
+        </Card>
       </div>
+
+      <Card className="mt-8">
+        <CardHeader><h2 className="font-semibold">Persisted reference data</h2></CardHeader>
+        <CardContent className="grid gap-3 text-sm text-muted-foreground md:grid-cols-3">
+          <p><span className="block font-semibold text-foreground">{protocols.length}</span> protocols loaded</p>
+          <p><span className="block font-semibold text-foreground">{categories.length}</span> categories loaded</p>
+          <p><span className="block font-semibold text-foreground">{insights.length}</span> insights loaded</p>
+        </CardContent>
+      </Card>
     </section>
   );
 }

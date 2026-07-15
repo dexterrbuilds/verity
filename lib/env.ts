@@ -28,10 +28,6 @@ export function hasAdminConfig() {
   return Boolean(env.ADMIN_PASSWORD && env.SESSION_SECRET);
 }
 
-export function dataMode() {
-  return env.NEXT_PUBLIC_DATA_MODE ?? "demo";
-}
-
 export function hasServiceRoleConfig() {
   return Boolean(hasSupabaseConfig() && env.SUPABASE_SERVICE_ROLE_KEY);
 }
@@ -41,12 +37,5 @@ export function adminConfigIssue() {
   if (env.ADMIN_PASSWORD.length < 12) return "ADMIN_PASSWORD must be at least 12 characters for admin access.";
   if (!env.SESSION_SECRET) return "SESSION_SECRET is not configured.";
   if (env.SESSION_SECRET.length < 32) return "SESSION_SECRET must be at least 32 characters.";
-  return null;
-}
-
-export function persistenceIssue() {
-  if (dataMode() === "connected" && !hasServiceRoleConfig()) {
-    return "Connected mode requires NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, and SUPABASE_SERVICE_ROLE_KEY.";
-  }
   return null;
 }

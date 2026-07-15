@@ -1,9 +1,10 @@
 import type { MetadataRoute } from "next";
-import { forecasters, markets } from "@/lib/data/seed";
+import { getDataSet } from "@/lib/data";
 
 const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const data = await getDataSet();
   return [
     "",
     "/overview",
@@ -11,8 +12,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/forecasters",
     "/leaderboard",
     "/about",
-    ...markets.map((market) => `/markets/${market.slug}`),
-    ...forecasters.map((forecaster) => `/forecasters/${forecaster.slug}`)
+    ...data.markets.map((market) => `/markets/${market.slug}`),
+    ...data.forecasters.map((forecaster) => `/forecasters/${forecaster.slug}`)
   ].map((path) => ({
     url: `${baseUrl}${path}`,
     lastModified: new Date()

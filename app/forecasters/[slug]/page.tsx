@@ -5,19 +5,21 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { PerformanceChart } from "@/components/charts/performance-chart";
 import { StatCard } from "@/components/stat-card";
-import { enrichForecaster, getForecaster, getMarketById } from "@/lib/data";
-import { forecasters } from "@/lib/data/seed";
+import { getForecasterBySlug, getForecasterStaticParams, marketById } from "@/lib/data";
 import { formatDate, formatPercent } from "@/lib/utils";
+import type { EnrichedForecaster } from "@/types";
+import type { DataSet } from "@/lib/data/source";
 
 type Params = { slug: string };
 
-export function generateStaticParams() {
-  return forecasters.map((forecaster) => ({ slug: forecaster.slug }));
+export async function generateStaticParams() {
+  return getForecasterStaticParams();
 }
 
 export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
   const { slug } = await params;
-  const forecaster = getForecaster(slug);
+  const result = await getForecasterBySlug(slug);
+  const forecaster = result?.forecaster;
   if (!forecaster) return {};
   return {
     title: forecaster.displayName,
@@ -31,9 +33,9 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
 
 export default async function ForecasterProfilePage({ params }: { params: Promise<Params> }) {
   const { slug } = await params;
-  const base = getForecaster(slug);
-  if (!base) notFound();
-  const forecaster = enrichForecaster(base);
+  const result = await getForecasterBySlug(slug);
+  if (!result) notFound();
+  const { data, forecaster } = result;
   const metric = forecaster.metrics;
   const history = forecaster.forecasts.sort((a, b) => b.forecastedAt.localeCompare(a.forecastedAt));
   const active = history.filter((forecast) => !forecast.isResolved);
@@ -90,24 +92,24 @@ export default async function ForecasterProfilePage({ params }: { params: Promis
       </div>
 
       <div className="mt-8 grid gap-8 lg:grid-cols-2">
-        <ForecastList title="Active forecasts" forecasts={active} />
-        <ForecastList title="Resolved forecasts" forecasts={resolved} />
+        <ForecastList title="Active forecasts" forecasts={active} data={data} />
+        <ForecastList title="Resolved forecasts" forecasts={resolved} data={data} />
       </div>
       <div className="mt-8 grid gap-8 lg:grid-cols-2">
-        <ForecastList title="Best calls" forecasts={best} />
-        <ForecastList title="Worst calls" forecasts={worst} />
+        <ForecastList title="Best calls" forecasts={best} data={data} />
+        <ForecastList title="Worst calls" forecasts={worst} data={data} />
       </div>
     </section>
   );
 }
 
-function ForecastList({ title, forecasts }: { title: string; forecasts: ReturnType<typeof enrichForecaster>["forecasts"] }) {
+function ForecastList({ title, forecasts, data }: { title: string; forecasts: EnrichedForecaster["forecasts"]; data: DataSet }) {
   return (
     <Card>
       <CardHeader><h2 className="font-semibold">{title}</h2></CardHeader>
       <CardContent className="space-y-4">
         {forecasts.length ? forecasts.map((forecast) => {
-          const market = getMarketById(forecast.marketId);
+          const market = marketById(data, forecast.marketId);
           return (
             <div key={forecast.id} className="rounded-md border p-4">
               <p className="line-clamp-2 font-medium">{market?.question ?? forecast.marketId}</p>

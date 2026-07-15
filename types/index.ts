@@ -104,3 +104,30 @@ export type MarketConviction = {
   bearishShare: number;
   trackedForecasterCount: number;
 };
+
+export type EnrichedMarket = Market & {
+  category?: Category;
+  protocol?: Protocol;
+  conviction: MarketConviction;
+};
+
+export type EnrichedForecaster = Forecaster & {
+  metrics?: ForecasterMetrics;
+  forecasts: Forecast[];
+};
+
+export type PlatformStats = {
+  totalForecasters: number;
+  totalMarkets: number;
+  activeMarkets: number;
+  resolvedMarkets: number;
+  totalForecasts: number;
+  resolvedForecasts: number;
+  averageAccuracy: number;
+};
+
+export type ResolvedForecastSummary = {
+  forecast: Forecast;
+  forecaster: Forecaster;
+  market: Market;
+};

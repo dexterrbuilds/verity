@@ -6,19 +6,19 @@ import { ButtonLink } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ProbabilityChart } from "@/components/charts/probability-chart";
 import { MarketCard } from "@/features/markets/market-card";
-import { enrichMarket, forecastsForMarket, getForecasterById, getForecasterMetric, getMarket, historyForMarket, trendingMarkets } from "@/lib/data";
-import { markets } from "@/lib/data/seed";
+import { forecasterById, getMarketBySlug, getMarketStaticParams, getMetrics } from "@/lib/data";
 import { formatCompact, formatDate, formatPercent } from "@/lib/utils";
 
 type Params = { slug: string };
 
-export function generateStaticParams() {
-  return markets.map((market) => ({ slug: market.slug }));
+export async function generateStaticParams() {
+  return getMarketStaticParams();
 }
 
 export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
   const { slug } = await params;
-  const market = getMarket(slug);
+  const result = await getMarketBySlug(slug);
+  const market = result?.market;
   if (!market) return {};
   return {
     title: market.question,
@@ -32,12 +32,10 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
 
 export default async function MarketDetailPage({ params }: { params: Promise<Params> }) {
   const { slug } = await params;
-  const base = getMarket(slug);
-  if (!base) notFound();
-  const market = enrichMarket(base);
-  const marketForecasts = forecastsForMarket(market.id);
-  const history = historyForMarket(market.id);
-  const related = trendingMarkets(3).filter((item) => item.id !== market.id);
+  const result = await getMarketBySlug(slug);
+  if (!result) notFound();
+  const { data, market, forecasts: marketForecasts, history, related } = result;
+  const metrics = getMetrics(data);
 
   return (
     <section className="container-page py-10">
@@ -58,7 +56,7 @@ export default async function MarketDetailPage({ params }: { params: Promise<Par
           <CardContent className="grid grid-cols-2 gap-4">
             <p><span className="block text-3xl font-bold">{formatPercent(market.currentProbability)}</span><span className="text-sm text-muted-foreground">Current probability</span></p>
             <p><span className="block text-3xl font-bold">{formatPercent(market.conviction.reputationWeightedForecast)}</span><span className="text-sm text-muted-foreground">Weighted forecast</span></p>
-            <p><span className="block font-semibold">{formatCompact(market.volume)}</span><span className="text-sm text-muted-foreground">Demo volume</span></p>
+            <p><span className="block font-semibold">{formatCompact(market.volume)}</span><span className="text-sm text-muted-foreground">Tracked volume</span></p>
             <p><span className="block font-semibold">{market.participantCount}</span><span className="text-sm text-muted-foreground">Participants</span></p>
             <p><span className="block font-semibold">{formatDate(market.resolutionDate)}</span><span className="text-sm text-muted-foreground">Resolution date</span></p>
             <p className="flex items-center gap-2"><Users className="h-4 w-4 text-accent" /><span>{market.conviction.trackedForecasterCount} tracked</span></p>
@@ -72,7 +70,7 @@ export default async function MarketDetailPage({ params }: { params: Promise<Par
           <CardContent><ProbabilityChart data={history} /></CardContent>
         </Card>
         <Card>
-          <CardHeader><h2 className="font-semibold">What tracked demo forecasters think</h2></CardHeader>
+          <CardHeader><h2 className="font-semibold">What tracked forecasters think</h2></CardHeader>
           <CardContent className="space-y-3 text-sm">
             <p className="flex justify-between"><span>Average tracked forecast</span><strong>{formatPercent(market.conviction.averageTrackedForecast)}</strong></p>
             <p className="flex justify-between"><span>Reputation-weighted forecast</span><strong>{formatPercent(market.conviction.reputationWeightedForecast)}</strong></p>
@@ -87,8 +85,8 @@ export default async function MarketDetailPage({ params }: { params: Promise<Par
         <CardHeader><h2 className="font-semibold">Tracked forecasts</h2></CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2">
           {marketForecasts.map((forecast) => {
-            const profile = getForecasterById(forecast.forecasterId);
-            const metric = getForecasterMetric(forecast.forecasterId);
+            const profile = forecasterById(data, forecast.forecasterId);
+            const metric = metrics.find((item) => item.forecasterId === forecast.forecasterId);
             return (
               <div key={forecast.id} className="rounded-md border p-4">
                 <div className="flex items-start justify-between gap-3">

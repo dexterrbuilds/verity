@@ -32,3 +32,13 @@ Important invariants are enforced in SQL where possible:
 - forecast correctness must match resolved state
 - duplicate forecasts for the same forecaster/market/timestamp are rejected
 - forecasts cannot be inserted into non-active markets or after the resolution date
+
+## Connected Seed
+
+Run:
+
+```bash
+NEXT_PUBLIC_DATA_MODE=connected npm run seed:supabase
+```
+
+The seed script uses deterministic UUIDs derived from the local demo IDs, inserts records in foreign-key order, temporarily keeps markets active while inserting historical forecasts, then updates markets to their final statuses. It uses upserts and is intended to be idempotent.

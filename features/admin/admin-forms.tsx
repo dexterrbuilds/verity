@@ -10,13 +10,17 @@ import {
   createInsightAction,
   createMarketAction,
   createProtocolAction,
+  editCategoryAction,
   editForecasterAction,
+  editForecastAction,
+  editInsightAction,
   editMarketAction,
+  editProtocolAction,
   loginAction,
   markForecastAction,
   resolveMarketAction
 } from "@/app/admin/actions";
-import type { Forecast, Forecaster, Market } from "@/types";
+import type { Category, Forecast, Forecaster, Insight, Market, Protocol } from "@/types";
 
 const initial = { ok: false, message: "" };
 
@@ -204,6 +208,37 @@ export function MarkForecastForm({ forecasts }: { forecasts: Forecast[] }) {
   );
 }
 
+export function EditForecastForm({ forecasts, forecasters, markets }: { forecasts: Forecast[]; forecasters: Forecaster[]; markets: Market[] }) {
+  const [state, action, pending] = useActionState(editForecastAction, initial);
+  const first = forecasts[0];
+  return (
+    <form action={action} className="grid gap-3">
+      <Select name="id" required>
+        {forecasts.map((forecast) => <option key={forecast.id} value={forecast.id}>{forecast.id}</option>)}
+      </Select>
+      <Select name="forecasterId" defaultValue={first?.forecasterId} required>
+        {forecasters.map((forecaster) => <option key={forecaster.id} value={forecaster.id}>{forecaster.displayName}</option>)}
+      </Select>
+      <Select name="marketId" defaultValue={first?.marketId} required>
+        {markets.map((market) => <option key={market.id} value={market.id}>{market.question}</option>)}
+      </Select>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Input name="predictedProbability" type="number" defaultValue={first?.predictedProbability} placeholder="Prediction" required />
+        <Input name="confidence" type="number" defaultValue={first?.confidence} placeholder="Confidence" required />
+        <Select name="position" defaultValue={first?.position ?? "yes"}>
+          <option value="yes">Yes</option>
+          <option value="no">No</option>
+          <option value="neutral">Neutral</option>
+        </Select>
+      </div>
+      <Input name="forecastedAt" type="datetime-local" defaultValue={first?.forecastedAt.slice(0, 16)} required />
+      <Textarea name="reasoning" defaultValue={first?.reasoning} placeholder="Short reasoning" required />
+      <Status state={state} />
+      <Button disabled={pending}>{pending ? "Saving..." : "Edit Forecast"}</Button>
+    </form>
+  );
+}
+
 export function ProtocolForm() {
   const [state, action, pending] = useActionState(createProtocolAction, initial);
   return (
@@ -214,6 +249,24 @@ export function ProtocolForm() {
       <Textarea name="description" placeholder="Description" required />
       <Status state={state} />
       <Button disabled={pending}>{pending ? "Saving..." : "Add Protocol"}</Button>
+    </form>
+  );
+}
+
+export function EditProtocolForm({ protocols }: { protocols: Protocol[] }) {
+  const [state, action, pending] = useActionState(editProtocolAction, initial);
+  const first = protocols[0];
+  return (
+    <form action={action} className="grid gap-3">
+      <Select name="id" required>
+        {protocols.map((protocol) => <option key={protocol.id} value={protocol.id}>{protocol.name}</option>)}
+      </Select>
+      <Input name="name" defaultValue={first?.name} placeholder="Protocol name" required />
+      <Input name="slug" defaultValue={first?.slug} placeholder="protocol-slug" required />
+      <Input name="websiteUrl" defaultValue={first?.websiteUrl} placeholder="https://example.com" />
+      <Textarea name="description" defaultValue={first?.description} placeholder="Description" required />
+      <Status state={state} />
+      <Button disabled={pending}>{pending ? "Saving..." : "Edit Protocol"}</Button>
     </form>
   );
 }
@@ -231,6 +284,23 @@ export function CategoryForm() {
   );
 }
 
+export function EditCategoryForm({ categories }: { categories: Category[] }) {
+  const [state, action, pending] = useActionState(editCategoryAction, initial);
+  const first = categories[0];
+  return (
+    <form action={action} className="grid gap-3">
+      <Select name="id" required>
+        {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+      </Select>
+      <Input name="name" defaultValue={first?.name} placeholder="Category name" required />
+      <Input name="slug" defaultValue={first?.slug} placeholder="category-slug" required />
+      <Textarea name="description" defaultValue={first?.description} placeholder="Description" required />
+      <Status state={state} />
+      <Button disabled={pending}>{pending ? "Saving..." : "Edit Category"}</Button>
+    </form>
+  );
+}
+
 export function InsightForm() {
   const [state, action, pending] = useActionState(createInsightAction, initial);
   return (
@@ -244,6 +314,27 @@ export function InsightForm() {
       </label>
       <Status state={state} />
       <Button disabled={pending}>{pending ? "Saving..." : "Add Insight"}</Button>
+    </form>
+  );
+}
+
+export function EditInsightForm({ insights }: { insights: Insight[] }) {
+  const [state, action, pending] = useActionState(editInsightAction, initial);
+  const first = insights[0];
+  return (
+    <form action={action} className="grid gap-3">
+      <Select name="id" required>
+        {insights.map((insight) => <option key={insight.id} value={insight.id}>{insight.title}</option>)}
+      </Select>
+      <Input name="title" defaultValue={first?.title} placeholder="Insight title" required />
+      <Textarea name="body" defaultValue={first?.body} placeholder="Insight body" required />
+      <Input name="category" defaultValue={first?.category} placeholder="Category" required />
+      <label className="flex items-center gap-2 text-sm">
+        <input name="isFeatured" type="checkbox" defaultChecked={first?.isFeatured} className="h-4 w-4" />
+        Featured
+      </label>
+      <Status state={state} />
+      <Button disabled={pending}>{pending ? "Saving..." : "Edit Insight"}</Button>
     </form>
   );
 }

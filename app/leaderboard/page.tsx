@@ -5,8 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Select } from "@/components/ui/input";
-import { forecasterMetrics, getForecasterById } from "@/lib/data";
-import { categories } from "@/lib/data/seed";
+import { forecasterById, getLeaderboard } from "@/lib/data";
 import { formatPercent } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -24,11 +23,7 @@ function value(params: SearchParams, key: string) {
 export default async function LeaderboardPage({ searchParams }: { searchParams?: Promise<SearchParams> }) {
   const params = (await searchParams) ?? {};
   const domain = value(params, "domain") || "overall";
-  const rows = [...forecasterMetrics].sort((a, b) => {
-    if (domain === "overall") return a.rank - b.rank;
-    const label = categories.find((category) => category.slug === domain)?.name ?? "Overall";
-    return (b.categoryAccuracy[label] ?? 0) - (a.categoryAccuracy[label] ?? 0);
-  });
+  const { data, rows } = await getLeaderboard(domain);
 
   return (
     <section className="container-page py-10">
@@ -67,7 +62,7 @@ export default async function LeaderboardPage({ searchParams }: { searchParams?:
             </thead>
             <tbody>
               {rows.map((metric, index) => {
-                const forecaster = getForecasterById(metric.forecasterId);
+                const forecaster = forecasterById(data, metric.forecasterId);
                 if (!forecaster) return null;
                 return (
                   <tr key={metric.forecasterId} className="border-b last:border-0">

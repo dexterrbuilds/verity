@@ -4,11 +4,11 @@ import { ButtonLink } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { MarketCard } from "@/features/markets/market-card";
 import { ForecasterCard } from "@/features/forecasters/forecaster-card";
-import { enrichForecaster, topForecasters, trendingMarkets } from "@/lib/data";
+import { getLandingData } from "@/lib/data";
 
-export default function LandingPage() {
-  const top = topForecasters(3).map(({ forecaster }) => enrichForecaster(forecaster));
-  const markets = trendingMarkets(3);
+export default async function LandingPage() {
+  const { data, stats, topForecasters, trendingMarkets } = await getLandingData();
+  const demo = data.mode === "demo";
 
   return (
     <>
@@ -28,13 +28,13 @@ export default function LandingPage() {
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="rounded-md bg-muted p-4">
               <LineChart className="h-5 w-5 text-accent" />
-              <p className="mt-5 text-3xl font-bold">25</p>
-              <p className="text-sm text-muted-foreground">demo markets tracked</p>
+              <p className="mt-5 text-3xl font-bold">{stats.totalMarkets}</p>
+              <p className="text-sm text-muted-foreground">{demo ? "demo markets tracked" : "markets tracked"}</p>
             </div>
             <div className="rounded-md bg-muted p-4">
               <Award className="h-5 w-5 text-accent" />
-              <p className="mt-5 text-3xl font-bold">15</p>
-              <p className="text-sm text-muted-foreground">fictional forecasters ranked</p>
+              <p className="mt-5 text-3xl font-bold">{stats.totalForecasters}</p>
+              <p className="text-sm text-muted-foreground">{demo ? "fictional forecasters ranked" : "forecasters ranked"}</p>
             </div>
           </div>
           <div className="mt-3 rounded-md border p-4">
@@ -66,12 +66,14 @@ export default function LandingPage() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h2 className="text-3xl font-bold tracking-tight">Top forecasters preview</h2>
-            <p className="mt-2 text-muted-foreground">Initial rankings based on tracked demo forecasts.</p>
+            <p className="mt-2 text-muted-foreground">
+              {demo ? "Initial rankings based on tracked demo forecasts." : "Initial rankings based on persisted tracked forecasts."}
+            </p>
           </div>
           <ButtonLink href="/forecasters" variant="secondary">View Directory</ButtonLink>
         </div>
         <div className="mt-6 grid gap-4 md:grid-cols-3">
-          {top.map((forecaster) => <ForecasterCard key={forecaster.id} forecaster={forecaster} />)}
+          {topForecasters.map((forecaster) => <ForecasterCard key={forecaster.id} forecaster={forecaster} />)}
         </div>
       </section>
 
@@ -79,12 +81,14 @@ export default function LandingPage() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h2 className="text-3xl font-bold tracking-tight">Trending markets preview</h2>
-            <p className="mt-2 text-muted-foreground">Seeded markets with the strongest current movement and activity.</p>
+            <p className="mt-2 text-muted-foreground">
+              {demo ? "Seeded markets with the strongest current movement and activity." : "Tracked markets with the strongest current movement and activity."}
+            </p>
           </div>
           <ButtonLink href="/markets" variant="secondary">Open Markets</ButtonLink>
         </div>
         <div className="mt-6 grid gap-4 lg:grid-cols-3">
-          {markets.map((market) => <MarketCard key={market.id} market={market} />)}
+          {trendingMarkets.map((market) => <MarketCard key={market.id} market={market} />)}
         </div>
       </section>
 

@@ -1,7 +1,15 @@
-import type { Forecast, ForecasterMetrics, Market, MarketConviction } from "@/types";
-import { categories } from "@/lib/data/seed";
+import type { Category, Forecast, ForecasterMetrics, Market, MarketConviction } from "@/types";
 
 const INFLUENCE_CAP = 0.35;
+const DEFAULT_CATEGORY_LABELS: Record<string, string> = {
+  "cat-sol": "Solana",
+  "cat-ai": "AI",
+  "cat-defi": "DeFi",
+  "cat-gov": "Governance",
+  "cat-macro": "Macro",
+  "cat-crypto": "Crypto",
+  "cat-infra": "Infrastructure"
+};
 
 function clamp(value: number, min = 0, max = 100) {
   return Math.max(min, Math.min(max, value));
@@ -143,7 +151,19 @@ export function calculateVerityScore(forecasts: Forecast[], markets: Market[] = 
   return clamp(raw * sampleWeight + 50 * (1 - sampleWeight));
 }
 
-export function buildForecasterMetrics(allForecasts: Forecast[], markets: Market[]): ForecasterMetrics[] {
+function categoryLabel(categoryId: string, categories: Category[]) {
+  return categories.find((category) => category.id === categoryId)?.name ?? DEFAULT_CATEGORY_LABELS[categoryId] ?? categoryId;
+}
+
+function categoryList(markets: Market[], categories: Category[]) {
+  const seen = new Map<string, string>();
+  for (const market of markets) {
+    seen.set(market.categoryId, categoryLabel(market.categoryId, categories));
+  }
+  return Array.from(seen.entries()).map(([id, name]) => ({ id, name }));
+}
+
+export function buildForecasterMetrics(allForecasts: Forecast[], markets: Market[], categories: Category[] = []): ForecasterMetrics[] {
   const byForecaster = new Map<string, Forecast[]>();
   for (const forecast of allForecasts) {
     byForecaster.set(forecast.forecasterId, [...(byForecaster.get(forecast.forecasterId) ?? []), forecast]);
@@ -151,7 +171,7 @@ export function buildForecasterMetrics(allForecasts: Forecast[], markets: Market
 
   const metrics = Array.from(byForecaster.entries()).map(([forecasterId, items]) => {
     const categoryAccuracy: Record<string, number> = {};
-    for (const category of categories) {
+    for (const category of categoryList(markets, categories)) {
       const categoryMarketIds = new Set(markets.filter((market) => market.categoryId === category.id).map((market) => market.id));
       categoryAccuracy[category.name] = calculateAccuracy(items.filter((forecast) => categoryMarketIds.has(forecast.marketId)), markets);
     }
@@ -190,7 +210,8 @@ export function buildForecasterMetrics(allForecasts: Forecast[], markets: Market
 export function calculateMarketConviction(
   market: Market,
   forecasts: Forecast[],
-  metrics: ForecasterMetrics[]
+  metrics: ForecasterMetrics[],
+  categories: Category[] = []
 ): MarketConviction {
   const marketForecasts = forecasts.filter((forecast) => forecast.marketId === market.id);
   if (!marketForecasts.length) {
@@ -205,7 +226,7 @@ export function calculateMarketConviction(
   }
 
   const metricByForecaster = new Map(metrics.map((metric) => [metric.forecasterId, metric]));
-  const categoryName = categories.find((category) => category.id === market.categoryId)?.name ?? "Crypto";
+  const categoryName = categoryLabel(market.categoryId, categories);
   const weighted = marketForecasts.map((forecast) => {
     assertValidProbability(forecast.predictedProbability, "predictedProbability");
     assertValidProbability(forecast.confidence, "confidence");

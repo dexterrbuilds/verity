@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test tests/*.test.ts",
-    "seed": "tsx scripts/seed-summary.ts"
+    "seed": "tsx scripts/seed-summary.ts",
+    "seed:supabase": "tsx scripts/seed-supabase.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.110.5",
@@ -20,6 +21,7 @@
     "react": "19.2.7",
     "react-dom": "19.2.7",
     "recharts": "3.9.2",
+    "server-only": "^0.0.1",
     "tailwind-merge": "3.6.0",
     "zod": "4.4.3"
   },

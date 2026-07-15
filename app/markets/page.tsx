@@ -5,9 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/input";
 import { MarketCard } from "@/features/markets/market-card";
-import { categories, protocols } from "@/lib/data/seed";
-import { enrichMarket } from "@/lib/data";
-import { markets } from "@/lib/data/seed";
+import { getCatalogData, getMarkets } from "@/lib/data";
 
 export const metadata: Metadata = {
   title: "Markets",
@@ -15,7 +13,6 @@ export const metadata: Metadata = {
 };
 
 type SearchParams = Record<string, string | string[] | undefined>;
-const REFERENCE_TIME = new Date("2026-07-14T00:00:00-07:00").getTime();
 
 function value(params: SearchParams, key: string) {
   const item = params[key];
@@ -30,24 +27,10 @@ export default async function MarketsPage({ searchParams }: { searchParams?: Pro
   const status = value(params, "status");
   const timeframe = value(params, "timeframe");
   const sort = value(params, "sort") || "trending";
-
-  let results = markets.map(enrichMarket).filter((market) => {
-    const matchesSearch = !q || `${market.question} ${market.description} ${market.category?.name} ${market.protocol?.name}`.toLowerCase().includes(q);
-    const matchesCategory = !category || market.category?.slug === category;
-    const matchesProtocol = !protocol || market.protocol?.slug === protocol;
-    const matchesStatus = !status || market.resolutionStatus === status;
-    const days = (new Date(market.resolutionDate).getTime() - REFERENCE_TIME) / (1000 * 60 * 60 * 24);
-    const matchesTimeframe = !timeframe || (timeframe === "30" ? days <= 30 : timeframe === "90" ? days <= 90 : days > 90);
-    return matchesSearch && matchesCategory && matchesProtocol && matchesStatus && matchesTimeframe;
-  });
-
-  results = results.sort((a, b) => {
-    if (sort === "volume") return b.volume - a.volume;
-    if (sort === "forecasters") return b.conviction.trackedForecasterCount - a.conviction.trackedForecasterCount;
-    if (sort === "change") return Math.abs(b.currentProbability - b.previousProbability) - Math.abs(a.currentProbability - a.previousProbability);
-    if (sort === "resolution") return new Date(a.resolutionDate).getTime() - new Date(b.resolutionDate).getTime();
-    return Math.abs(b.currentProbability - b.previousProbability) + b.volume / 1000000 - (Math.abs(a.currentProbability - a.previousProbability) + a.volume / 1000000);
-  });
+  const [{ categories, protocols }, { markets: results }] = await Promise.all([
+    getCatalogData(),
+    getMarkets({ q, category, protocol, status, timeframe, sort })
+  ]);
 
   return (
     <section className="container-page py-10">

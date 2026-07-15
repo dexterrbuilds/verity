@@ -2,7 +2,7 @@ import Link from "next/link";
 import { BarChart3, Search } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { dataMode } from "@/lib/env";
+import { getModeDisclosure } from "@/lib/data/mode";
 
 const navItems = [
   ["Overview", "/overview"],
@@ -13,13 +13,10 @@ const navItems = [
 ] as const;
 
 export function SiteHeader() {
-  const mode = dataMode();
   return (
     <header className="sticky top-0 z-40 border-b bg-background/88 backdrop-blur">
       <div className="border-b bg-accent/10 py-2 text-center text-xs text-muted-foreground">
-        {mode === "demo"
-          ? "Demo data mode: rankings, markets, volumes, and forecaster identities are illustrative for MVP validation."
-          : "Connected data mode: verify Supabase reads and writes before public launch."}
+        {getModeDisclosure()}
       </div>
       <div className="container-page flex h-16 items-center gap-4">
         <Link href="/" className="flex items-center gap-2 font-bold tracking-tight" aria-label="Verity home">

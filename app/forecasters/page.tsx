@@ -5,8 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/input";
 import { ForecasterCard } from "@/features/forecasters/forecaster-card";
-import { enrichForecaster } from "@/lib/data";
-import { categories, forecasters } from "@/lib/data/seed";
+import { getCatalogData, getForecasters } from "@/lib/data";
 
 export const metadata: Metadata = {
   title: "Forecasters",
@@ -28,24 +27,10 @@ export default async function ForecastersPage({ searchParams }: { searchParams?:
   const accuracy = value(params, "accuracy");
   const score = value(params, "score");
   const sort = value(params, "sort") || "score";
-
-  let results = forecasters.map(enrichForecaster).filter((forecaster) => {
-    const metric = forecaster.metrics;
-    const matchesSearch = !q || `${forecaster.displayName} ${forecaster.xHandle} ${forecaster.bio} ${forecaster.strongestDomain}`.toLowerCase().includes(q);
-    const matchesDomain = !domain || forecaster.strongestDomain.toLowerCase() === domain;
-    const matchesMinForecasts = (metric?.totalForecasts ?? 0) >= minForecasts;
-    const matchesAccuracy = !accuracy || (accuracy === "70" ? (metric?.accuracy ?? 0) >= 70 : (metric?.accuracy ?? 0) >= 55);
-    const matchesScore = !score || (score === "80" ? (metric?.verityScore ?? 0) >= 80 : (metric?.verityScore ?? 0) >= 65);
-    return matchesSearch && matchesDomain && matchesMinForecasts && matchesAccuracy && matchesScore;
-  });
-
-  results = results.sort((a, b) => {
-    if (sort === "accuracy") return (b.metrics?.accuracy ?? 0) - (a.metrics?.accuracy ?? 0);
-    if (sort === "forecasts") return (b.metrics?.totalForecasts ?? 0) - (a.metrics?.totalForecasts ?? 0);
-    if (sort === "recent") return (b.metrics?.recentPerformance ?? 0) - (a.metrics?.recentPerformance ?? 0);
-    if (sort === "consistency") return (b.metrics?.consistency ?? 0) - (a.metrics?.consistency ?? 0);
-    return (b.metrics?.verityScore ?? 0) - (a.metrics?.verityScore ?? 0);
-  });
+  const [{ categories }, { forecasters: results }] = await Promise.all([
+    getCatalogData(),
+    getForecasters({ q, domain, minForecasts, accuracy, score, sort })
+  ]);
 
   return (
     <section className="container-page py-10">

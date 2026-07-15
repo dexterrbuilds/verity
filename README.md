@@ -41,13 +41,21 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000
 
 `ADMIN_PASSWORD` must be at least 12 characters and `SESSION_SECRET` must be at least 32 characters for admin login to work.
 
-`NEXT_PUBLIC_DATA_MODE=demo` is explicit demo mode. In demo mode, public pages read local seed data and admin mutations are blocked as read-only so changes are not silently lost. `NEXT_PUBLIC_DATA_MODE=connected` is reserved for Supabase-backed operation and requires service credentials plus a real read path before public deployment.
+`NEXT_PUBLIC_DATA_MODE=demo` is explicit demo mode. In demo mode, public pages read local seed data and admin mutations are blocked as read-only so changes are not silently lost.
+
+`NEXT_PUBLIC_DATA_MODE=connected` enables Supabase-backed reads and writes. Connected mode requires:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+
+On Vercel production deployments, incomplete Supabase configuration fails clearly instead of silently falling back to demo data.
 
 ## Supabase Setup
 
 Run `supabase/migrations/001_initial_schema.sql` in your Supabase SQL editor or through the Supabase CLI. Public reads are allowed by RLS policies. Writes should go through server-side code using `SUPABASE_SERVICE_ROLE_KEY`.
 
-The local MVP reads from `lib/data/seed.ts`. Supabase write actions are guarded and disabled in demo mode because public pages do not yet read from Supabase. Do not present connected persistence as complete until public data access is migrated from local arrays to Supabase queries.
+Public and admin screens read through the repository layer in `lib/data/`. Demo mode uses `lib/data/seed.ts`; connected mode reads from Supabase via public RLS policies. Admin mutations use the service role only on the server.
 
 ## Seed Instructions
 
@@ -66,6 +74,14 @@ Check counts with:
 ```bash
 npm run seed
 ```
+
+Populate a connected Supabase project with the same dataset:
+
+```bash
+NEXT_PUBLIC_DATA_MODE=connected npm run seed:supabase
+```
+
+The connected seed uses stable UUIDs and upserts, so it is safe to run multiple times.
 
 ## Admin Access
 
@@ -97,7 +113,9 @@ A minimum-sample adjustment keeps small lucky samples from ranking first. Market
 ## Current Limitations
 
 - Demo data is fictional and manually seeded.
-- Admin forms validate, require authentication, and are read-only in demo mode. Connected persistence still needs Supabase-backed public reads before launch.
+- Admin forms validate, require authentication, and are read-only in demo mode.
+- Connected mode calculates scores at read time from persisted markets and forecasts.
+- The repository currently uses bounded read-time queries suitable for MVP-scale datasets, not a materialized scoring cache.
 - No wallet connection, onchain execution, token functionality, automated indexing, public API, AI analysis, or SDK.
 - Scoring assumptions should be revisited with real samples and customer feedback.
 
@@ -107,5 +125,5 @@ A minimum-sample adjustment keeps small lucky samples from ranking first. Market
 - Add CSV import for forecasts and market history.
 - Add real source links after selecting initial partner protocols.
 - Add event transport for the analytics abstraction.
-- Replace local array reads with Supabase queries for connected mode.
 - Add admin CRUD integration tests against a disposable Supabase database.
+- Add pagination and materialized score caching before large datasets.

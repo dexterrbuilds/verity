@@ -62,6 +62,10 @@ export const forecastSchema = z.object({
   reasoning: z.string().min(8)
 });
 
+export const editForecastSchema = forecastSchema.extend({
+  id: z.string().min(1)
+});
+
 export const markForecastSchema = z.object({
   id: z.string().min(1),
   wasCorrect: z.enum(["true", "false"])
@@ -74,10 +78,18 @@ export const protocolSchema = z.object({
   description: z.string().min(8)
 });
 
+export const editProtocolSchema = protocolSchema.extend({
+  id: z.string().min(1)
+});
+
 export const categorySchema = z.object({
   name: z.string().min(2),
   slug: slugSchema,
   description: z.string().min(8)
+});
+
+export const editCategorySchema = categorySchema.extend({
+  id: z.string().min(1)
 });
 
 export const insightSchema = z.object({
@@ -85,4 +97,8 @@ export const insightSchema = z.object({
   body: z.string().min(10),
   category: z.string().min(2),
   isFeatured: z.enum(["on", "true"]).optional()
+});
+
+export const editInsightSchema = insightSchema.extend({
+  id: z.string().min(1)
 });

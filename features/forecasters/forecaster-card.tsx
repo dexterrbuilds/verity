@@ -3,9 +3,7 @@ import { CheckCircle2, Flame } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatPercent } from "@/lib/utils";
-import type { enrichForecaster } from "@/lib/data";
-
-type EnrichedForecaster = ReturnType<typeof enrichForecaster>;
+import type { EnrichedForecaster } from "@/types";
 
 export function ForecasterCard({ forecaster }: { forecaster: EnrichedForecaster }) {
   const metric = forecaster.metrics;

@@ -31,4 +31,4 @@ Verity is a market intelligence and forecaster reputation MVP for onchain market
 
 The first product should be credible enough for demos and customer interviews without pretending the system is already a mature protocol.
 
-The current implementation is explicitly demo-first. Public pages use fictional local seed data. Supabase-backed persistence is not complete until reads, writes, admin forms, and scoring all operate on the same persisted dataset.
+The implementation supports demo and connected modes. Demo mode uses fictional local seed data and is read-only for admin mutations. Connected mode uses Supabase for public reads, admin reads, admin writes, and read-time score calculation.
