@@ -26,6 +26,10 @@ export const editForecasterSchema = forecasterSchema.extend({
 export const marketSchema = z.object({
   question: z.string().min(12),
   slug: slugSchema,
+  description: z.string().min(10),
+  protocolId: z.string().optional().or(z.literal("")),
+  categoryId: z.string().optional().or(z.literal("")),
+  sourceUrl: z.string().url().optional().or(z.literal("")),
   currentProbability: probabilitySchema,
   previousProbability: probabilitySchema,
   volume: nonNegativeNumberSchema,
@@ -36,6 +40,9 @@ export const marketSchema = z.object({
   resolutionRules: z.string().min(10)
 }).refine((value) => value.resolutionStatus !== "resolved" || value.resolutionOutcome === "yes" || value.resolutionOutcome === "no", {
   message: "Resolved markets require a yes/no outcome.",
+  path: ["resolutionOutcome"]
+}).refine((value) => value.resolutionStatus === "resolved" || !value.resolutionOutcome, {
+  message: "Only resolved markets can have an outcome.",
   path: ["resolutionOutcome"]
 });
 
@@ -49,6 +56,9 @@ export const resolveMarketSchema = z.object({
   resolutionOutcome: z.enum(["yes", "no"]).optional().or(z.literal(""))
 }).refine((value) => value.resolutionStatus !== "resolved" || value.resolutionOutcome === "yes" || value.resolutionOutcome === "no", {
   message: "Resolved markets require a yes/no outcome.",
+  path: ["resolutionOutcome"]
+}).refine((value) => value.resolutionStatus === "resolved" || !value.resolutionOutcome, {
+  message: "Cancelled markets cannot have an outcome.",
   path: ["resolutionOutcome"]
 });
 

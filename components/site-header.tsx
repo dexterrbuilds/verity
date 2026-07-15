@@ -3,14 +3,7 @@ import { BarChart3, Search } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { getModeDisclosure } from "@/lib/data/mode";
-
-const navItems = [
-  ["Overview", "/overview"],
-  ["Markets", "/markets"],
-  ["Forecasters", "/forecasters"],
-  ["Leaderboard", "/leaderboard"],
-  ["About", "/about"]
-] as const;
+import { siteConfig } from "@/lib/site";
 
 export function SiteHeader() {
   return (
@@ -26,7 +19,7 @@ export function SiteHeader() {
           <span className="text-lg">Verity</span>
         </Link>
         <nav className="hidden items-center gap-1 md:flex" aria-label="Main navigation">
-          {navItems.map(([label, href]) => (
+          {siteConfig.navigation.map(({ label, href }) => (
             <Link key={href} href={href} className="rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
               {label}
             </Link>
@@ -45,7 +38,7 @@ export function SiteHeader() {
         <ButtonLink href="/leaderboard" className="hidden lg:inline-flex">Explore Rankings</ButtonLink>
       </div>
       <nav className="container-page flex gap-1 overflow-x-auto pb-3 md:hidden" aria-label="Mobile navigation">
-        {navItems.map(([label, href]) => (
+        {siteConfig.navigation.map(({ label, href }) => (
           <Link key={href} href={href} className="shrink-0 rounded-md border bg-card px-3 py-2 text-sm">
             {label}
           </Link>

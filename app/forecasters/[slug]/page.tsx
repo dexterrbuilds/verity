@@ -6,7 +6,8 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { PerformanceChart } from "@/components/charts/performance-chart";
 import { StatCard } from "@/components/stat-card";
 import { getForecasterBySlug, getForecasterStaticParams, marketById } from "@/lib/data";
-import { formatDate, formatPercent } from "@/lib/utils";
+import { absoluteUrl } from "@/lib/site";
+import { dataOriginLabel, formatDate, formatPercent, profileStatusLabel, verificationLabel } from "@/lib/utils";
 import type { EnrichedForecaster } from "@/types";
 import type { DataSet } from "@/lib/data/source";
 
@@ -24,9 +25,13 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   return {
     title: forecaster.displayName,
     description: forecaster.bio,
+    alternates: {
+      canonical: absoluteUrl(`/forecasters/${forecaster.slug}`)
+    },
     openGraph: {
       title: `${forecaster.displayName} forecast reputation`,
-      description: forecaster.bio
+      description: forecaster.bio,
+      url: absoluteUrl(`/forecasters/${forecaster.slug}`)
     }
   };
 }
@@ -54,6 +59,9 @@ export default async function ForecasterProfilePage({ params }: { params: Promis
               <h1 className="text-4xl font-bold tracking-tight">{forecaster.displayName}</h1>
               {forecaster.isVerified ? <CheckCircle2 className="h-5 w-5 text-accent" aria-label="Verified" /> : null}
               <Badge tone="accent">Rank #{metric?.rank}</Badge>
+              <Badge>{dataOriginLabel(forecaster.dataOrigin)}</Badge>
+              <Badge>{profileStatusLabel(forecaster.profileStatus)}</Badge>
+              {forecaster.verificationStatus !== "unverified" ? <Badge tone="positive">{verificationLabel(forecaster.verificationStatus)}</Badge> : null}
             </div>
             <p className="mt-2 text-muted-foreground">{forecaster.xHandle} · {forecaster.walletAddress}</p>
             <p className="mt-4 max-w-3xl leading-7 text-muted-foreground">{forecaster.bio}</p>

@@ -29,17 +29,14 @@ import {
 } from "@/features/admin/validation";
 import { createServiceSupabaseClient } from "@/lib/supabase/server";
 import { getDataMode, getDataSet, getMarketById, getModeError } from "@/lib/data";
+import { logger } from "@/lib/logger";
+import { adminMutationRevalidationPaths } from "@/lib/revalidation";
 
 function revalidatePublicData() {
-  revalidatePath("/admin");
-  revalidatePath("/");
-  revalidatePath("/overview");
-  revalidatePath("/markets");
-  revalidatePath("/forecasters");
-  revalidatePath("/leaderboard");
-  revalidatePath("/markets/[slug]", "page");
-  revalidatePath("/forecasters/[slug]", "page");
-  revalidatePath("/sitemap.xml");
+  for (const path of adminMutationRevalidationPaths) {
+    if (path.includes("[slug]")) revalidatePath(path, "page");
+    else revalidatePath(path);
+  }
 }
 
 function writableClientOrIssue(): { ok: true; supabase: NonNullable<ReturnType<typeof createServiceSupabaseClient>> } | { ok: false; message: string } {
@@ -54,6 +51,10 @@ function writableClientOrIssue(): { ok: true; supabase: NonNullable<ReturnType<t
 }
 
 function mutationError(message: string, error: { code?: string; message?: string }) {
+  logger.error("admin_mutation_failed", {
+    code: error.code ?? null,
+    message
+  });
   if (error.code === "23505") return { ok: false, message: "A record with that unique value already exists." };
   return { ok: false, message };
 }
@@ -100,11 +101,22 @@ export async function createMarketAction(_: unknown, formData: FormData) {
   if (unauthorized) return unauthorized;
   const parsed = marketSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { ok: false, message: "Check the market fields and try again." };
+  const dataSet = await getDataSet();
+  if (parsed.data.protocolId && !dataSet.protocols.some((protocol) => protocol.id === parsed.data.protocolId)) {
+    return { ok: false, message: "Protocol does not exist." };
+  }
+  if (parsed.data.categoryId && !dataSet.categories.some((category) => category.id === parsed.data.categoryId)) {
+    return { ok: false, message: "Category does not exist." };
+  }
   const writable = writableClientOrIssue();
   if (!writable.ok) return { ok: false, message: writable.message };
   const { error } = await writable.supabase.from("markets").insert({
     slug: parsed.data.slug,
     question: parsed.data.question,
+    description: parsed.data.description,
+    protocol_id: parsed.data.protocolId || null,
+    category_id: parsed.data.categoryId || null,
+    source_url: parsed.data.sourceUrl || null,
     current_probability: parsed.data.currentProbability,
     previous_probability: parsed.data.previousProbability,
     volume: parsed.data.volume,
@@ -159,14 +171,15 @@ export async function editForecasterAction(_: unknown, formData: FormData) {
   if (!parsed.success) return { ok: false, message: "Check the forecaster edit fields and try again." };
   const writable = writableClientOrIssue();
   if (!writable.ok) return { ok: false, message: writable.message };
-  const { error } = await writable.supabase.from("forecasters").update({
+  const { data, error } = await writable.supabase.from("forecasters").update({
     slug: parsed.data.slug,
     display_name: parsed.data.displayName,
     wallet_address: parsed.data.walletAddress,
     x_handle: parsed.data.xHandle,
     bio: parsed.data.bio
-  }).eq("id", parsed.data.id);
+  }).eq("id", parsed.data.id).select("id").maybeSingle();
   if (error) return mutationError("Supabase rejected the forecaster update.", error);
+  if (!data) return { ok: false, message: "Forecaster not found." };
   revalidatePublicData();
   return { ok: true, message: "Forecaster updated." };
 }
@@ -176,11 +189,22 @@ export async function editMarketAction(_: unknown, formData: FormData) {
   if (unauthorized) return unauthorized;
   const parsed = editMarketSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { ok: false, message: "Check the market edit fields and try again." };
+  const dataSet = await getDataSet();
+  if (parsed.data.protocolId && !dataSet.protocols.some((protocol) => protocol.id === parsed.data.protocolId)) {
+    return { ok: false, message: "Protocol does not exist." };
+  }
+  if (parsed.data.categoryId && !dataSet.categories.some((category) => category.id === parsed.data.categoryId)) {
+    return { ok: false, message: "Category does not exist." };
+  }
   const writable = writableClientOrIssue();
   if (!writable.ok) return { ok: false, message: writable.message };
-  const { error } = await writable.supabase.from("markets").update({
+  const { data, error } = await writable.supabase.from("markets").update({
     slug: parsed.data.slug,
     question: parsed.data.question,
+    description: parsed.data.description,
+    protocol_id: parsed.data.protocolId || null,
+    category_id: parsed.data.categoryId || null,
+    source_url: parsed.data.sourceUrl || null,
     current_probability: parsed.data.currentProbability,
     previous_probability: parsed.data.previousProbability,
     volume: parsed.data.volume,
@@ -189,8 +213,9 @@ export async function editMarketAction(_: unknown, formData: FormData) {
     resolution_status: parsed.data.resolutionStatus,
     resolution_rules: parsed.data.resolutionRules,
     resolution_outcome: parsed.data.resolutionOutcome || null
-  }).eq("id", parsed.data.id);
+  }).eq("id", parsed.data.id).select("id").maybeSingle();
   if (error) return mutationError("Supabase rejected the market update.", error);
+  if (!data) return { ok: false, message: "Market not found." };
   revalidatePublicData();
   return { ok: true, message: "Market updated." };
 }
@@ -202,11 +227,12 @@ export async function resolveMarketAction(_: unknown, formData: FormData) {
   if (!parsed.success) return { ok: false, message: "Choose a market and resolution outcome." };
   const writable = writableClientOrIssue();
   if (!writable.ok) return { ok: false, message: writable.message };
-  const { error } = await writable.supabase.from("markets").update({
+  const { data, error } = await writable.supabase.from("markets").update({
     resolution_status: parsed.data.resolutionStatus,
     resolution_outcome: parsed.data.resolutionOutcome || null
-  }).eq("id", parsed.data.id);
+  }).eq("id", parsed.data.id).select("id").maybeSingle();
   if (error) return mutationError("Supabase rejected the market resolution.", error);
+  if (!data) return { ok: false, message: "Market not found." };
   revalidatePublicData();
   return { ok: true, message: "Market resolution saved." };
 }
@@ -218,11 +244,12 @@ export async function markForecastAction(_: unknown, formData: FormData) {
   if (!parsed.success) return { ok: false, message: "Choose a forecast and correctness value." };
   const writable = writableClientOrIssue();
   if (!writable.ok) return { ok: false, message: writable.message };
-  const { error } = await writable.supabase.from("forecasts").update({
+  const { data, error } = await writable.supabase.from("forecasts").update({
     is_resolved: true,
     was_correct: parsed.data.wasCorrect === "true"
-  }).eq("id", parsed.data.id);
+  }).eq("id", parsed.data.id).select("id").maybeSingle();
   if (error) return mutationError("Supabase rejected the forecast update.", error);
+  if (!data) return { ok: false, message: "Forecast not found." };
   revalidatePublicData();
   return { ok: true, message: "Forecast correctness saved." };
 }
@@ -293,7 +320,7 @@ export async function editForecastAction(_: unknown, formData: FormData) {
   }
   const writable = writableClientOrIssue();
   if (!writable.ok) return { ok: false, message: writable.message };
-  const { error } = await writable.supabase.from("forecasts").update({
+  const { data: updated, error } = await writable.supabase.from("forecasts").update({
     forecaster_id: parsed.data.forecasterId,
     market_id: parsed.data.marketId,
     predicted_probability: parsed.data.predictedProbability,
@@ -301,8 +328,9 @@ export async function editForecastAction(_: unknown, formData: FormData) {
     position: parsed.data.position,
     reasoning: parsed.data.reasoning,
     forecasted_at: parsed.data.forecastedAt
-  }).eq("id", parsed.data.id);
+  }).eq("id", parsed.data.id).select("id").maybeSingle();
   if (error) return mutationError("Supabase rejected the forecast update.", error);
+  if (!updated) return { ok: false, message: "Forecast not found." };
   revalidatePublicData();
   return { ok: true, message: "Forecast updated." };
 }
@@ -314,13 +342,14 @@ export async function editProtocolAction(_: unknown, formData: FormData) {
   if (!parsed.success) return { ok: false, message: "Check the protocol edit fields and try again." };
   const writable = writableClientOrIssue();
   if (!writable.ok) return { ok: false, message: writable.message };
-  const { error } = await writable.supabase.from("protocols").update({
+  const { data, error } = await writable.supabase.from("protocols").update({
     name: parsed.data.name,
     slug: parsed.data.slug,
     website_url: parsed.data.websiteUrl || null,
     description: parsed.data.description
-  }).eq("id", parsed.data.id);
+  }).eq("id", parsed.data.id).select("id").maybeSingle();
   if (error) return mutationError("Supabase rejected the protocol update.", error);
+  if (!data) return { ok: false, message: "Protocol not found." };
   revalidatePublicData();
   return { ok: true, message: "Protocol updated." };
 }
@@ -333,8 +362,9 @@ export async function editCategoryAction(_: unknown, formData: FormData) {
   const writable = writableClientOrIssue();
   if (!writable.ok) return { ok: false, message: writable.message };
   const { id, ...updates } = parsed.data;
-  const { error } = await writable.supabase.from("categories").update(updates).eq("id", id);
+  const { data, error } = await writable.supabase.from("categories").update(updates).eq("id", id).select("id").maybeSingle();
   if (error) return mutationError("Supabase rejected the category update.", error);
+  if (!data) return { ok: false, message: "Category not found." };
   revalidatePublicData();
   return { ok: true, message: "Category updated." };
 }
@@ -346,13 +376,14 @@ export async function editInsightAction(_: unknown, formData: FormData) {
   if (!parsed.success) return { ok: false, message: "Check the insight edit fields and try again." };
   const writable = writableClientOrIssue();
   if (!writable.ok) return { ok: false, message: writable.message };
-  const { error } = await writable.supabase.from("insights").update({
+  const { data, error } = await writable.supabase.from("insights").update({
     title: parsed.data.title,
     body: parsed.data.body,
     category: parsed.data.category,
     is_featured: Boolean(parsed.data.isFeatured)
-  }).eq("id", parsed.data.id);
+  }).eq("id", parsed.data.id).select("id").maybeSingle();
   if (error) return mutationError("Supabase rejected the insight update.", error);
+  if (!data) return { ok: false, message: "Insight not found." };
   revalidatePublicData();
   return { ok: true, message: "Insight updated." };
 }

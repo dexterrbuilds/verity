@@ -31,12 +31,12 @@ export const getDataSet = cache(async (): Promise<DataSet> => {
   if (isDemoMode()) {
     return {
       mode: "demo",
-      categories: demoCategories,
-      protocols: demoProtocols,
-      markets: demoMarkets,
-      forecasters: demoForecasters,
-      forecasts: demoForecasts,
-      insights: demoInsights,
+      categories: demoCategories.map((category) => ({ ...category, dataOrigin: "demo" as const, verificationStatus: "unverified" as const })),
+      protocols: demoProtocols.map((protocol) => ({ ...protocol, dataOrigin: "demo" as const, verificationStatus: "unverified" as const })),
+      markets: demoMarkets.map((market) => ({ ...market, dataOrigin: "demo" as const, verificationStatus: "unverified" as const })),
+      forecasters: demoForecasters.map((forecaster) => ({ ...forecaster, dataOrigin: "demo" as const, verificationStatus: "unverified" as const, profileStatus: "unclaimed" as const })),
+      forecasts: demoForecasts.map((forecast) => ({ ...forecast, dataOrigin: "demo" as const, verificationStatus: "unverified" as const })),
+      insights: demoInsights.map((insight) => ({ ...insight, dataOrigin: "demo" as const, verificationStatus: "unverified" as const })),
       probabilityHistory: demoProbabilityHistory
     };
   }
@@ -56,12 +56,12 @@ export const getDataSet = cache(async (): Promise<DataSet> => {
 });
 
 export const getInsights = cache(async () => {
-  if (isDemoMode()) return demoInsights;
+  if (isDemoMode()) return demoInsights.map((insight) => ({ ...insight, dataOrigin: "demo" as const, verificationStatus: "unverified" as const }));
   const supabase = getPublicSupabaseClient();
   if (!supabase) throw new Error("Connected mode could not initialize Supabase public client.");
   const { data, error } = await supabase
     .from("insights")
-    .select("id,title,body,category,is_featured,published_at,created_at,updated_at")
+    .select("id,title,body,category,is_featured,data_origin,verification_status,published_at,created_at,updated_at")
     .order("published_at", { ascending: false })
     .limit(50);
   if (error) throwDataError("Failed to load insights", error);

@@ -1,4 +1,4 @@
-import type { ForecastPosition, ResolutionStatus } from "@/types";
+import type { DataOrigin, ForecastPosition, ProfileStatus, ResolutionStatus, VerificationStatus } from "@/types";
 
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
@@ -11,14 +11,20 @@ export type Database = {
           name: string;
           slug: string;
           description: string | null;
+          data_origin: DataOrigin;
+          verification_status: VerificationStatus;
           created_at: string;
+          updated_at: string;
         };
         Insert: {
           id?: string;
           name: string;
           slug: string;
           description?: string | null;
+          data_origin?: DataOrigin;
+          verification_status?: VerificationStatus;
           created_at?: string;
+          updated_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["categories"]["Insert"]>;
         Relationships: [];
@@ -31,6 +37,8 @@ export type Database = {
           logo_url: string | null;
           website_url: string | null;
           description: string | null;
+          data_origin: DataOrigin;
+          verification_status: VerificationStatus;
           created_at: string;
           updated_at: string;
         };
@@ -41,6 +49,8 @@ export type Database = {
           logo_url?: string | null;
           website_url?: string | null;
           description?: string | null;
+          data_origin?: DataOrigin;
+          verification_status?: VerificationStatus;
           created_at?: string;
           updated_at?: string;
         };
@@ -58,6 +68,9 @@ export type Database = {
           bio: string | null;
           joined_at: string;
           is_verified: boolean;
+          data_origin: DataOrigin;
+          verification_status: VerificationStatus;
+          profile_status: ProfileStatus;
           created_at: string;
           updated_at: string;
         };
@@ -71,6 +84,9 @@ export type Database = {
           bio?: string | null;
           joined_at?: string;
           is_verified?: boolean;
+          data_origin?: DataOrigin;
+          verification_status?: VerificationStatus;
+          profile_status?: ProfileStatus;
           created_at?: string;
           updated_at?: string;
         };
@@ -94,6 +110,8 @@ export type Database = {
           resolution_status: ResolutionStatus;
           resolution_outcome: "yes" | "no" | null;
           resolution_rules: string | null;
+          data_origin: DataOrigin;
+          verification_status: VerificationStatus;
           created_at: string;
           updated_at: string;
         };
@@ -113,6 +131,8 @@ export type Database = {
           resolution_status?: ResolutionStatus;
           resolution_outcome?: "yes" | "no" | null;
           resolution_rules?: string | null;
+          data_origin?: DataOrigin;
+          verification_status?: VerificationStatus;
           created_at?: string;
           updated_at?: string;
         };
@@ -132,6 +152,8 @@ export type Database = {
           is_resolved: boolean;
           was_correct: boolean | null;
           score_impact: number | string;
+          data_origin: DataOrigin;
+          verification_status: VerificationStatus;
           created_at: string;
           updated_at: string;
         };
@@ -147,6 +169,8 @@ export type Database = {
           is_resolved?: boolean;
           was_correct?: boolean | null;
           score_impact?: number;
+          data_origin?: DataOrigin;
+          verification_status?: VerificationStatus;
           created_at?: string;
           updated_at?: string;
         };
@@ -176,6 +200,8 @@ export type Database = {
           body: string;
           category: string | null;
           is_featured: boolean;
+          data_origin: DataOrigin;
+          verification_status: VerificationStatus;
           published_at: string;
           created_at: string;
           updated_at: string;
@@ -186,6 +212,8 @@ export type Database = {
           body: string;
           category?: string | null;
           is_featured?: boolean;
+          data_origin?: DataOrigin;
+          verification_status?: VerificationStatus;
           published_at?: string;
           created_at?: string;
           updated_at?: string;
@@ -199,6 +227,9 @@ export type Database = {
     Enums: {
       resolution_status: ResolutionStatus;
       forecast_position: ForecastPosition;
+      data_origin: DataOrigin;
+      verification_status: VerificationStatus;
+      profile_status: ProfileStatus;
     };
     CompositeTypes: Record<string, never>;
   };

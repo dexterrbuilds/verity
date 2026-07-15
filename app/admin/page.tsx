@@ -87,7 +87,7 @@ export default async function AdminPage() {
         </Card>
         <Card>
           <CardHeader><h2 className="font-semibold">Add market</h2></CardHeader>
-          <CardContent><MarketForm /></CardContent>
+          <CardContent><MarketForm protocols={protocols} categories={categories} /></CardContent>
         </Card>
         <Card>
           <CardHeader><h2 className="font-semibold">Add forecast</h2></CardHeader>
@@ -102,7 +102,7 @@ export default async function AdminPage() {
         </Card>
         <Card>
           <CardHeader><h2 className="font-semibold">Edit market</h2></CardHeader>
-          <CardContent><EditMarketForm markets={markets} /></CardContent>
+          <CardContent><EditMarketForm markets={markets} protocols={protocols} categories={categories} /></CardContent>
         </Card>
         <Card>
           <CardHeader><h2 className="font-semibold">Resolve market</h2></CardHeader>

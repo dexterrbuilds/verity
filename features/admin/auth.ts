@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { headers } from "next/headers";
 import { adminConfigIssue, env } from "@/lib/env";
+import { logger } from "@/lib/logger";
 
 const COOKIE_NAME = "verity_admin_session";
 const SESSION_TTL_MS = 1000 * 60 * 60 * 8;
@@ -36,6 +37,7 @@ export async function isLoginRateLimited() {
     return false;
   }
   record.count += 1;
+  if (record.count > MAX_LOGIN_ATTEMPTS) logger.warn("admin_login_rate_limited", { key });
   return record.count > MAX_LOGIN_ATTEMPTS;
 }
 

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { CheckCircle2, Flame } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { formatPercent } from "@/lib/utils";
+import { dataOriginLabel, formatPercent, profileStatusLabel, verificationLabel } from "@/lib/utils";
 import type { EnrichedForecaster } from "@/types";
 
 export function ForecasterCard({ forecaster }: { forecaster: EnrichedForecaster }) {
@@ -21,6 +21,11 @@ export function ForecasterCard({ forecaster }: { forecaster: EnrichedForecaster 
               <p className="truncate text-sm text-muted-foreground">{forecaster.xHandle} · {forecaster.walletAddress}</p>
             </div>
             <Badge tone="accent">#{metric?.rank ?? "-"}</Badge>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Badge>{dataOriginLabel(forecaster.dataOrigin)}</Badge>
+            <Badge>{profileStatusLabel(forecaster.profileStatus)}</Badge>
+            {forecaster.verificationStatus !== "unverified" ? <Badge tone="positive">{verificationLabel(forecaster.verificationStatus)}</Badge> : null}
           </div>
           <p className="line-clamp-2 text-sm text-muted-foreground">{forecaster.bio}</p>
           <div className="grid grid-cols-2 gap-3 text-sm">

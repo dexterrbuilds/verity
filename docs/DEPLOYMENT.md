@@ -2,19 +2,30 @@
 
 ## Vercel
 
-1. Push the repository to GitHub.
-2. Import the project in Vercel.
-3. Add environment variables from `.env.example`.
-4. Set `NEXT_PUBLIC_SITE_URL` to the production URL.
-5. Set `NEXT_PUBLIC_DATA_MODE=connected` for production.
-6. Deploy.
+1. Create a Supabase project.
+2. Apply migrations with `supabase db push` or run every SQL file in `supabase/migrations/` in lexical order.
+3. Copy `.env.example` to `.env.local` and fill the Supabase URL, anon key, service-role key, admin password, session secret, and `NEXT_PUBLIC_DATA_MODE=connected`.
+4. Run `npm run verify:supabase`.
+5. Run `npm run seed:supabase` if you want the initial demonstration dataset.
+6. Run `npm run dev` and test public routes plus `/admin`.
+7. Push the repository to GitHub.
+8. Import the project in Vercel.
+9. Add production environment variables from `.env.example`.
+10. Set `NEXT_PUBLIC_SITE_URL` to the production URL.
+11. Deploy.
+12. Verify `/`, `/overview`, `/markets`, `/forecasters`, `/leaderboard`, `/api/health`, `/sitemap.xml`, and `/robots.txt`.
+13. Verify admin login.
+14. Create a small test record.
+15. Confirm the public page updates after mutation.
+16. Remove or clearly label temporary test data.
 
 ## Supabase
 
 1. Create a Supabase project.
-2. Run `supabase/migrations/001_initial_schema.sql`.
-3. Copy the project URL and anon key into Vercel.
+2. Apply migrations with `supabase db push`.
+3. Copy the project URL and anon key into local/Vercel environment variables.
 4. Add the service role key only as a server-side environment variable.
+5. Run `npm run verify:supabase`.
 
 ## Production Readiness Gate
 
@@ -37,8 +48,13 @@ npm run typecheck
 npm run build
 npm test
 npm audit
+npm run verify:supabase
 ```
 
 ## Revalidation
 
 Admin mutations call `revalidatePath` for the landing page, overview, market directory, market detail route pattern, forecaster directory, forecaster detail route pattern, leaderboard, admin, and sitemap. This keeps the MVP fresh without a separate cache invalidation service.
+
+## Health
+
+`GET /api/health` returns a no-store JSON status. Demo mode reports a healthy demo status without touching Supabase. Connected mode performs one lightweight public read and returns `503` if the database is unavailable.

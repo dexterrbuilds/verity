@@ -29,6 +29,10 @@ function Status({ state }: { state: typeof initial }) {
   return <p className={state.ok ? "text-sm text-positive" : "text-sm text-destructive"}>{state.message}</p>;
 }
 
+function confirmStateChange(message: string) {
+  return window.confirm(message);
+}
+
 export function LoginForm() {
   const [state, action, pending] = useActionState(loginAction, initial);
   return (
@@ -59,12 +63,24 @@ export function ForecasterForm() {
   );
 }
 
-export function MarketForm() {
+export function MarketForm({ protocols, categories }: { protocols: Protocol[]; categories: Category[] }) {
   const [state, action, pending] = useActionState(createMarketAction, initial);
   return (
     <form action={action} className="grid gap-3">
       <Textarea name="question" placeholder="Market question" required />
       <Input name="slug" placeholder="market-slug" required />
+      <Textarea name="description" placeholder="Short market description" required />
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Select name="protocolId" defaultValue="">
+          <option value="">No protocol</option>
+          {protocols.map((protocol) => <option key={protocol.id} value={protocol.id}>{protocol.name}</option>)}
+        </Select>
+        <Select name="categoryId" defaultValue="">
+          <option value="">No category</option>
+          {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+        </Select>
+      </div>
+      <Input name="sourceUrl" type="url" placeholder="https://source.example/market" />
       <div className="grid gap-3 sm:grid-cols-2">
         <Input name="currentProbability" type="number" placeholder="Current probability" required />
         <Input name="previousProbability" type="number" placeholder="Previous probability" required />
@@ -136,7 +152,7 @@ export function EditForecasterForm({ forecasters }: { forecasters: Forecaster[] 
   );
 }
 
-export function EditMarketForm({ markets }: { markets: Market[] }) {
+export function EditMarketForm({ markets, protocols, categories }: { markets: Market[]; protocols: Protocol[]; categories: Category[] }) {
   const [state, action, pending] = useActionState(editMarketAction, initial);
   const first = markets[0];
   return (
@@ -146,6 +162,18 @@ export function EditMarketForm({ markets }: { markets: Market[] }) {
       </Select>
       <Textarea name="question" defaultValue={first?.question} placeholder="Market question" required />
       <Input name="slug" defaultValue={first?.slug} placeholder="market-slug" required />
+      <Textarea name="description" defaultValue={first?.description} placeholder="Short market description" required />
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Select name="protocolId" defaultValue={first?.protocolId ?? ""}>
+          <option value="">No protocol</option>
+          {protocols.map((protocol) => <option key={protocol.id} value={protocol.id}>{protocol.name}</option>)}
+        </Select>
+        <Select name="categoryId" defaultValue={first?.categoryId ?? ""}>
+          <option value="">No category</option>
+          {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+        </Select>
+      </div>
+      <Input name="sourceUrl" type="url" defaultValue={first?.sourceUrl} placeholder="https://source.example/market" />
       <div className="grid gap-3 sm:grid-cols-2">
         <Input name="currentProbability" type="number" defaultValue={first?.currentProbability} placeholder="Current probability" required />
         <Input name="previousProbability" type="number" defaultValue={first?.previousProbability} placeholder="Previous probability" required />
@@ -173,7 +201,13 @@ export function EditMarketForm({ markets }: { markets: Market[] }) {
 export function ResolveMarketForm({ markets }: { markets: Market[] }) {
   const [state, action, pending] = useActionState(resolveMarketAction, initial);
   return (
-    <form action={action} className="grid gap-3">
+    <form
+      action={action}
+      className="grid gap-3"
+      onSubmit={(event) => {
+        if (!confirmStateChange("Resolve or cancel this market? This affects public pages and scoring.")) event.preventDefault();
+      }}
+    >
       <Select name="id" required>
         {markets.map((market) => <option key={market.id} value={market.id}>{market.question}</option>)}
       </Select>
@@ -182,6 +216,7 @@ export function ResolveMarketForm({ markets }: { markets: Market[] }) {
         <option value="cancelled">Cancelled</option>
       </Select>
       <Select name="resolutionOutcome" defaultValue="yes">
+        <option value="">No outcome</option>
         <option value="yes">Yes</option>
         <option value="no">No</option>
       </Select>

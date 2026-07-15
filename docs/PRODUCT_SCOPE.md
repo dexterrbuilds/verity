@@ -13,6 +13,7 @@ Verity is a market intelligence and forecaster reputation MVP for onchain market
 - Password-protected admin route
 - Supabase schema
 - Seeded demo data
+- Record provenance labels for demo and manually curated data
 - Scoring and market conviction utilities
 
 ## Out of Scope
@@ -32,3 +33,5 @@ Verity is a market intelligence and forecaster reputation MVP for onchain market
 The first product should be credible enough for demos and customer interviews without pretending the system is already a mature protocol.
 
 The implementation supports demo and connected modes. Demo mode uses fictional local seed data and is read-only for admin mutations. Connected mode uses Supabase for public reads, admin reads, admin writes, and read-time score calculation.
+
+Public records distinguish seeded demonstration data from manually curated records. Verity should not claim protocol verification or integrated data until a real verification or integration process exists.

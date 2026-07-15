@@ -4,7 +4,7 @@ Verity is a lean MVP for market intelligence and forecaster reputation in the So
 
 Product statement: **Find the most credible forecasters in crypto and track what they are predicting.**
 
-This first version uses fictional, demo-labelled, manually seeded data. It is not a prediction market, trading venue, token product, wallet app, SDK, public API, DAO executor, or automated indexer.
+This first version can run in local demo mode with fictional data or connected mode with Supabase-backed records. It is not a prediction market, trading venue, token product, wallet app, SDK, public API, DAO executor, or automated indexer.
 
 ## Tech Stack
 
@@ -37,9 +37,16 @@ SUPABASE_SERVICE_ROLE_KEY=
 ADMIN_PASSWORD=
 SESSION_SECRET=
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
+NEXT_PUBLIC_DATA_MODE=connected
 ```
 
 `ADMIN_PASSWORD` must be at least 12 characters and `SESSION_SECRET` must be at least 32 characters for admin login to work.
+
+Generate a session secret with:
+
+```bash
+node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
+```
 
 `NEXT_PUBLIC_DATA_MODE=demo` is explicit demo mode. In demo mode, public pages read local seed data and admin mutations are blocked as read-only so changes are not silently lost.
 
@@ -53,7 +60,18 @@ On Vercel production deployments, incomplete Supabase configuration fails clearl
 
 ## Supabase Setup
 
-Run `supabase/migrations/001_initial_schema.sql` in your Supabase SQL editor or through the Supabase CLI. Public reads are allowed by RLS policies. Writes should go through server-side code using `SUPABASE_SERVICE_ROLE_KEY`.
+Recommended flow:
+
+```bash
+supabase link --project-ref <your-project-ref>
+supabase db push
+npm run verify:supabase
+npm run seed:supabase
+```
+
+If you do not use the Supabase CLI, run the migration files in `supabase/migrations/` in lexical order through the Supabase SQL Editor.
+
+Public reads are allowed by RLS policies. Writes should go through server-side code using `SUPABASE_SERVICE_ROLE_KEY`.
 
 Public and admin screens read through the repository layer in `lib/data/`. Demo mode uses `lib/data/seed.ts`; connected mode reads from Supabase via public RLS policies. Admin mutations use the service role only on the server.
 
@@ -78,10 +96,10 @@ npm run seed
 Populate a connected Supabase project with the same dataset:
 
 ```bash
-NEXT_PUBLIC_DATA_MODE=connected npm run seed:supabase
+npm run seed:supabase
 ```
 
-The connected seed uses stable UUIDs and upserts, so it is safe to run multiple times.
+The connected seed uses stable UUIDs, schema preflight checks, and upserts, so it is safe to run multiple times. Seeded records are labelled `data_origin=demo` and `verification_status=unverified`.
 
 ## Admin Access
 
@@ -91,7 +109,7 @@ Configure:
 
 ```env
 ADMIN_PASSWORD=change-this
-SESSION_SECRET=at-least-sixteen-characters
+SESSION_SECRET=at-least-32-random-characters
 ```
 
 ## Deployment
@@ -116,12 +134,13 @@ A minimum-sample adjustment keeps small lucky samples from ranking first. Market
 - Admin forms validate, require authentication, and are read-only in demo mode.
 - Connected mode calculates scores at read time from persisted markets and forecasts.
 - The repository currently uses bounded read-time queries suitable for MVP-scale datasets, not a materialized scoring cache.
+- Forecasts use the simple MVP rule: one forecast per forecaster per market, editable until market resolution.
+- Seeded demonstration records are clearly distinguished from manually curated records with provenance fields.
 - No wallet connection, onchain execution, token functionality, automated indexing, public API, AI analysis, or SDK.
 - Scoring assumptions should be revisited with real samples and customer feedback.
 
 ## Suggested Next Steps
 
-- Expand Supabase-backed edit/update/delete admin flows.
 - Add CSV import for forecasts and market history.
 - Add real source links after selecting initial partner protocols.
 - Add event transport for the analytics abstraction.

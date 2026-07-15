@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ProbabilityChart } from "@/components/charts/probability-chart";
 import { MarketCard } from "@/features/markets/market-card";
 import { forecasterById, getMarketBySlug, getMarketStaticParams, getMetrics } from "@/lib/data";
-import { formatCompact, formatDate, formatPercent } from "@/lib/utils";
+import { absoluteUrl } from "@/lib/site";
+import { dataOriginLabel, formatCompact, formatDate, formatPercent, verificationLabel } from "@/lib/utils";
 
 type Params = { slug: string };
 
@@ -23,9 +24,13 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   return {
     title: market.question,
     description: market.description,
+    alternates: {
+      canonical: absoluteUrl(`/markets/${market.slug}`)
+    },
     openGraph: {
       title: market.question,
-      description: market.description
+      description: market.description,
+      url: absoluteUrl(`/markets/${market.slug}`)
     }
   };
 }
@@ -45,6 +50,8 @@ export default async function MarketDetailPage({ params }: { params: Promise<Par
             <Badge tone="accent">{market.category?.name}</Badge>
             <Badge>{market.protocol?.name}</Badge>
             <Badge tone={market.resolutionStatus === "active" ? "accent" : market.resolutionStatus === "resolved" ? "positive" : "warning"}>{market.resolutionStatus}</Badge>
+            <Badge>{dataOriginLabel(market.dataOrigin)}</Badge>
+            {market.verificationStatus !== "unverified" ? <Badge tone="positive">{verificationLabel(market.verificationStatus)}</Badge> : null}
           </div>
           <h1 className="mt-4 text-4xl font-bold tracking-tight">{market.question}</h1>
           <p className="mt-4 leading-7 text-muted-foreground">{market.description}</p>

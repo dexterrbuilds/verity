@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Trophy } from "lucide-react";
+import { EmptyState } from "@/components/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -46,6 +47,7 @@ export default async function LeaderboardPage({ searchParams }: { searchParams?:
       </form>
 
       <Card className="mt-6 overflow-hidden">
+        {rows.length ? (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[760px] text-left text-sm">
             <thead className="border-b bg-muted/70 text-muted-foreground">
@@ -89,6 +91,11 @@ export default async function LeaderboardPage({ searchParams }: { searchParams?:
             </tbody>
           </table>
         </div>
+        ) : (
+          <CardContent>
+            <EmptyState title="No leaderboard yet" body="Add forecasters, markets, forecasts, and resolved outcomes to calculate rankings." />
+          </CardContent>
+        )}
       </Card>
 
       <Card className="mt-8">

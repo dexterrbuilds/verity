@@ -1,2 +1,3 @@
--- MVP seed data is generated in TypeScript at lib/data/seed.ts for local demos.
--- For Supabase, import that data through a small script or CSV export after running 001_initial_schema.sql.
+-- Supabase seed data is loaded by `npm run seed:supabase`.
+-- This file is intentionally empty so Supabase CLI migrations do not
+-- accidentally seed fictional demo records during schema setup.

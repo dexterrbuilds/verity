@@ -2,6 +2,9 @@ create extension if not exists pgcrypto;
 
 create type resolution_status as enum ('active', 'resolved', 'cancelled');
 create type forecast_position as enum ('yes', 'no', 'neutral');
+create type data_origin as enum ('demo', 'manually_curated', 'integrated');
+create type verification_status as enum ('unverified', 'source_checked', 'protocol_verified');
+create type profile_status as enum ('unclaimed', 'claimed');
 
 create table public.forecasters (
   id uuid primary key default gen_random_uuid(),
@@ -13,6 +16,9 @@ create table public.forecasters (
   bio text,
   joined_at timestamptz not null default now(),
   is_verified boolean not null default false,
+  data_origin data_origin not null default 'manually_curated',
+  verification_status verification_status not null default 'unverified',
+  profile_status profile_status not null default 'unclaimed',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -24,6 +30,8 @@ create table public.protocols (
   logo_url text,
   website_url text,
   description text,
+  data_origin data_origin not null default 'manually_curated',
+  verification_status verification_status not null default 'unverified',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -33,7 +41,10 @@ create table public.categories (
   name text not null,
   slug text not null unique,
   description text,
-  created_at timestamptz not null default now()
+  data_origin data_origin not null default 'manually_curated',
+  verification_status verification_status not null default 'unverified',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
 
 create table public.markets (
@@ -52,6 +63,8 @@ create table public.markets (
   resolution_status resolution_status not null default 'active',
   resolution_outcome forecast_position,
   resolution_rules text,
+  data_origin data_origin not null default 'manually_curated',
+  verification_status verification_status not null default 'unverified',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint markets_resolution_outcome_check check (
@@ -72,13 +85,15 @@ create table public.forecasts (
   is_resolved boolean not null default false,
   was_correct boolean,
   score_impact numeric(7,3) not null default 0,
+  data_origin data_origin not null default 'manually_curated',
+  verification_status verification_status not null default 'unverified',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint forecasts_correctness_resolution_check check (
     (is_resolved = true and was_correct is not null)
     or (is_resolved = false and was_correct is null)
   ),
-  constraint forecasts_unique_timestamp unique (forecaster_id, market_id, forecasted_at)
+  constraint forecasts_unique_forecaster_market unique (forecaster_id, market_id)
 );
 
 create table public.market_probability_history (
@@ -94,6 +109,8 @@ create table public.insights (
   body text not null,
   category text,
   is_featured boolean not null default false,
+  data_origin data_origin not null default 'manually_curated',
+  verification_status verification_status not null default 'unverified',
   published_at timestamptz not null default now(),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -120,6 +137,7 @@ $$;
 
 create trigger set_forecasters_updated_at before update on public.forecasters for each row execute function public.set_updated_at();
 create trigger set_protocols_updated_at before update on public.protocols for each row execute function public.set_updated_at();
+create trigger set_categories_updated_at before update on public.categories for each row execute function public.set_updated_at();
 create trigger set_markets_updated_at before update on public.markets for each row execute function public.set_updated_at();
 create trigger set_forecasts_updated_at before update on public.forecasts for each row execute function public.set_updated_at();
 create trigger set_insights_updated_at before update on public.insights for each row execute function public.set_updated_at();
@@ -132,17 +150,29 @@ declare
   market_record public.markets%rowtype;
 begin
   select * into market_record from public.markets where id = new.market_id;
-  if market_record.resolution_status <> 'active' then
+  if tg_op = 'INSERT' and market_record.resolution_status <> 'active' then
     raise exception 'forecasts can only be added to active markets';
   end if;
   if market_record.resolution_date is not null and new.forecasted_at > market_record.resolution_date then
     raise exception 'forecasted_at cannot be after market resolution_date';
+  end if;
+  if tg_op = 'UPDATE' and market_record.resolution_status <> 'active' and (
+    new.forecaster_id is distinct from old.forecaster_id
+    or new.market_id is distinct from old.market_id
+    or new.predicted_probability is distinct from old.predicted_probability
+    or new.confidence is distinct from old.confidence
+    or new.position is distinct from old.position
+    or new.reasoning is distinct from old.reasoning
+    or new.forecasted_at is distinct from old.forecasted_at
+  ) then
+    raise exception 'resolved or cancelled market forecasts cannot be edited';
   end if;
   return new;
 end;
 $$;
 
 create trigger reject_forecast_after_resolution before insert on public.forecasts for each row execute function public.reject_forecast_after_resolution();
+create trigger reject_forecast_update_after_resolution before update on public.forecasts for each row execute function public.reject_forecast_after_resolution();
 
 alter table public.forecasters enable row level security;
 alter table public.protocols enable row level security;

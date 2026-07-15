@@ -1,6 +1,13 @@
 import type { Category, Forecast, Forecaster, Insight, Market, ProbabilityPoint, Protocol } from "@/types";
 
-export const categories: Category[] = [
+type SeedCategory = Omit<Category, "dataOrigin" | "verificationStatus">;
+type SeedProtocol = Omit<Protocol, "dataOrigin" | "verificationStatus">;
+type SeedForecaster = Omit<Forecaster, "dataOrigin" | "verificationStatus" | "profileStatus">;
+type SeedMarket = Omit<Market, "dataOrigin" | "verificationStatus">;
+type SeedForecast = Omit<Forecast, "dataOrigin" | "verificationStatus">;
+type SeedInsight = Omit<Insight, "dataOrigin" | "verificationStatus">;
+
+export const categories: SeedCategory[] = [
   { id: "cat-sol", name: "Solana", slug: "solana", description: "Markets about Solana ecosystem growth and network activity." },
   { id: "cat-ai", name: "AI", slug: "ai", description: "AI products, agents, chips, and crypto AI adoption." },
   { id: "cat-defi", name: "DeFi", slug: "defi", description: "Liquidity, lending, derivatives, stablecoins, and yield markets." },
@@ -10,7 +17,7 @@ export const categories: Category[] = [
   { id: "cat-infra", name: "Infrastructure", slug: "infrastructure", description: "Validators, data, wallets, payments, and developer tooling." }
 ];
 
-export const protocols: Protocol[] = [
+export const protocols: SeedProtocol[] = [
   { id: "proto-drift", name: "Drift Signals", slug: "drift-signals", logoUrl: "/protocols/drift.svg", websiteUrl: "https://example.com/drift-signals", description: "Demo-labelled venue for Solana and DeFi probability markets." },
   { id: "proto-meta", name: "MetaDAO Watch", slug: "metadao-watch", logoUrl: "/protocols/metadao.svg", websiteUrl: "https://example.com/metadao-watch", description: "Demo-labelled futarchy and governance market source." },
   { id: "proto-squads", name: "Squads Intel", slug: "squads-intel", logoUrl: "/protocols/squads.svg", websiteUrl: "https://example.com/squads-intel", description: "Demo-labelled coordination and treasury decision tracker." },
@@ -18,7 +25,7 @@ export const protocols: Protocol[] = [
   { id: "proto-open", name: "Open Market Log", slug: "open-market-log", logoUrl: "/protocols/open.svg", websiteUrl: "https://example.com/open-market-log", description: "Demo-labelled public market import log." }
 ];
 
-export const forecasters: Forecaster[] = [
+export const forecasters: SeedForecaster[] = [
   { id: "f1", slug: "nova-validator", displayName: "Nova Validator", walletAddress: "7NoVa...9kQp", xHandle: "@nova_valid", avatarUrl: "NV", bio: "Validator operator focused on Solana throughput, MEV, and infra adoption.", joinedAt: "2025-01-12", isVerified: true, strongestDomain: "Solana" },
   { id: "f2", slug: "mira-quant", displayName: "Mira Quant", walletAddress: "3MirA...2pLs", xHandle: "@mira_quant", avatarUrl: "MQ", bio: "Systematic forecaster covering AI, liquidity, and high-beta crypto narratives.", joinedAt: "2025-02-03", isVerified: true, strongestDomain: "AI" },
   { id: "f3", slug: "jito-scribe", displayName: "Jito Scribe", walletAddress: "8JiTo...4rFx", xHandle: "@jitoscribe", avatarUrl: "JS", bio: "Research analyst tracking Solana infrastructure and validator economics.", joinedAt: "2025-02-22", isVerified: false, strongestDomain: "Infrastructure" },
@@ -64,7 +71,7 @@ const marketBlueprints = [
   ["cancelled-bridge-market", "Will the demo bridge-risk market resolve from the original oracle source?", "cat-crypto", "proto-open", 50, 50, 120000, 88, "2026-04-18", "cancelled", null]
 ] as const;
 
-export const markets: Market[] = marketBlueprints.map((item, index) => {
+export const markets: SeedMarket[] = marketBlueprints.map((item, index) => {
   const [slug, question, categoryId, protocolId, currentProbability, previousProbability, volume, participantCount, resolutionDate, resolutionStatus, outcome] = item;
   return {
     id: `m${index + 1}`,
@@ -100,7 +107,7 @@ function hash(input: string) {
   return Array.from(input).reduce((sum, char) => sum + char.charCodeAt(0), 0);
 }
 
-export const forecasts: Forecast[] = markets.flatMap((market, marketIndex) => {
+export const forecasts: SeedForecast[] = markets.flatMap((market, marketIndex) => {
   const category = categories.find((item) => item.id === market.categoryId)?.name ?? "Crypto";
   return forecasters.slice(0, 5 + (marketIndex % 4)).map((forecaster, forecasterIndex) => {
     const signal = hash(`${market.id}-${forecaster.id}`);
@@ -146,7 +153,7 @@ export const probabilityHistory: ProbabilityPoint[] = markets
     })
   );
 
-export const insights: Insight[] = [
+export const insights: SeedInsight[] = [
   { id: "i1", title: "AI market conviction increased this week", body: "Tracked forecasters moved their weighted AI probability basket up by 6 points across active markets.", category: "AI", isFeatured: true, publishedAt: "2026-07-12" },
   { id: "i2", title: "Solana infrastructure has the highest participation", body: "Infrastructure markets average the largest tracked forecaster set in the current seed universe.", category: "Infrastructure", isFeatured: true, publishedAt: "2026-07-11" },
   { id: "i3", title: "Top-ranked forecasters are split on restaking", body: "High-score forecasters disagree on whether Solana restaking TVL clears the $3B threshold this year.", category: "DeFi", isFeatured: true, publishedAt: "2026-07-10" },

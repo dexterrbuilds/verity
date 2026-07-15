@@ -1,11 +1,16 @@
 export type ResolutionStatus = "active" | "resolved" | "cancelled";
 export type ForecastPosition = "yes" | "no" | "neutral";
+export type DataOrigin = "demo" | "manually_curated" | "integrated";
+export type VerificationStatus = "unverified" | "source_checked" | "protocol_verified";
+export type ProfileStatus = "unclaimed" | "claimed";
 
 export type Category = {
   id: string;
   name: string;
   slug: string;
   description: string;
+  dataOrigin: DataOrigin;
+  verificationStatus: VerificationStatus;
 };
 
 export type Protocol = {
@@ -15,6 +20,8 @@ export type Protocol = {
   logoUrl: string;
   websiteUrl: string;
   description: string;
+  dataOrigin: DataOrigin;
+  verificationStatus: VerificationStatus;
 };
 
 export type Market = {
@@ -33,6 +40,8 @@ export type Market = {
   resolutionStatus: ResolutionStatus;
   resolutionOutcome: "yes" | "no" | null;
   resolutionRules: string;
+  dataOrigin: DataOrigin;
+  verificationStatus: VerificationStatus;
   createdAt: string;
   updatedAt: string;
 };
@@ -48,6 +57,9 @@ export type Forecaster = {
   joinedAt: string;
   isVerified: boolean;
   strongestDomain: string;
+  dataOrigin: DataOrigin;
+  verificationStatus: VerificationStatus;
+  profileStatus: ProfileStatus;
 };
 
 export type Forecast = {
@@ -62,6 +74,8 @@ export type Forecast = {
   isResolved: boolean;
   wasCorrect: boolean | null;
   scoreImpact: number;
+  dataOrigin: DataOrigin;
+  verificationStatus: VerificationStatus;
 };
 
 export type ProbabilityPoint = {
@@ -78,6 +92,8 @@ export type Insight = {
   category: string;
   isFeatured: boolean;
   publishedAt: string;
+  dataOrigin: DataOrigin;
+  verificationStatus: VerificationStatus;
 };
 
 export type ForecasterMetrics = {

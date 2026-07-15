@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Activity, Award, CheckCircle2, LineChart } from "lucide-react";
+import { EmptyState } from "@/components/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { StatCard } from "@/components/stat-card";
@@ -33,7 +34,7 @@ export default async function OverviewPage() {
       </div>
 
       <div className="mt-8 grid gap-4 lg:grid-cols-3">
-        {insights.map((insight) => (
+        {insights.length ? insights.map((insight) => (
           <Card key={insight.id}>
             <CardContent>
               <Badge>{insight.category}</Badge>
@@ -41,27 +42,27 @@ export default async function OverviewPage() {
               <p className="mt-2 text-sm leading-6 text-muted-foreground">{insight.body}</p>
             </CardContent>
           </Card>
-        ))}
+        )) : <EmptyState title="No featured insights yet" body="Feature an insight in admin to show it here." />}
       </div>
 
       <div className="mt-10 grid gap-8 xl:grid-cols-[1fr_360px]">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Trending markets</h2>
           <div className="mt-4 grid gap-4 lg:grid-cols-2">
-            {trendingMarkets.map((market) => <MarketCard key={market.id} market={market} />)}
+            {trendingMarkets.length ? trendingMarkets.map((market) => <MarketCard key={market.id} market={market} />) : <EmptyState title="No markets yet" body="Add markets in admin to populate this view." />}
           </div>
         </div>
         <div className="space-y-6">
           <div>
             <h2 className="text-2xl font-bold tracking-tight">Top-ranked forecasters</h2>
             <div className="mt-4 grid gap-4">
-              {topForecasters.map((forecaster) => <ForecasterCard key={forecaster.id} forecaster={forecaster} />)}
+              {topForecasters.length ? topForecasters.map((forecaster) => <ForecasterCard key={forecaster.id} forecaster={forecaster} />) : <EmptyState title="No forecasters yet" body="Add forecasters and resolved forecasts to calculate rankings." />}
             </div>
           </div>
           <Card>
             <CardHeader><h2 className="font-semibold">Recent resolved predictions</h2></CardHeader>
             <CardContent className="space-y-4">
-              {recentResolved.map(({ forecast, forecaster, market }) => (
+              {recentResolved.length ? recentResolved.map(({ forecast, forecaster, market }) => (
                 <div key={forecast.id} className="border-b pb-3 last:border-0 last:pb-0">
                   <p className="text-sm font-medium">{forecaster.displayName}</p>
                   <p className="line-clamp-2 text-sm text-muted-foreground">{market.question}</p>
@@ -69,7 +70,7 @@ export default async function OverviewPage() {
                     {forecast.wasCorrect ? "Correct" : "Incorrect"} · {forecast.scoreImpact.toFixed(2)} score impact
                   </p>
                 </div>
-              ))}
+              )) : <EmptyState title="No resolved predictions yet" body="Resolve a market to show recent scoring outcomes." />}
             </CardContent>
           </Card>
         </div>

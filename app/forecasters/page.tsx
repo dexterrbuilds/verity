@@ -27,17 +27,20 @@ export default async function ForecastersPage({ searchParams }: { searchParams?:
   const accuracy = value(params, "accuracy");
   const score = value(params, "score");
   const sort = value(params, "sort") || "score";
-  const [{ categories }, { forecasters: results }] = await Promise.all([
+  const [{ categories }, { data, forecasters: results }] = await Promise.all([
     getCatalogData(),
     getForecasters({ q, domain, minForecasts, accuracy, score, sort })
   ]);
+  const demo = data.mode === "demo";
 
   return (
     <section className="container-page py-10">
       <div className="flex flex-col gap-2">
         <Badge tone="accent">Forecasters</Badge>
         <h1 className="text-4xl font-bold tracking-tight">Forecaster reputation directory</h1>
-        <p className="max-w-3xl text-muted-foreground">Search fictional MVP forecasters by domain, forecast count, accuracy, score, and consistency.</p>
+        <p className="max-w-3xl text-muted-foreground">
+          {demo ? "Search fictional MVP forecasters by domain, forecast count, accuracy, score, and consistency." : "Search tracked forecasters by domain, forecast count, accuracy, score, and consistency."}
+        </p>
       </div>
 
       <form className="mt-8 grid gap-3 rounded-lg border bg-card p-4 md:grid-cols-[1.5fr_repeat(5,1fr)_auto]" aria-label="Forecaster filters">

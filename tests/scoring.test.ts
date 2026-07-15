@@ -25,6 +25,8 @@ const baseMarket: Market = {
   resolutionStatus: "resolved",
   resolutionOutcome: "yes",
   resolutionRules: "Resolves yes or no.",
+  dataOrigin: "manually_curated",
+  verificationStatus: "unverified",
   createdAt: "2026-01-01",
   updatedAt: "2026-01-01"
 };
@@ -69,6 +71,8 @@ function forecast(overrides: Partial<Forecast> = {}): Forecast {
     isResolved: true,
     wasCorrect: null,
     scoreImpact: 0,
+    dataOrigin: "manually_curated",
+    verificationStatus: "unverified",
     ...overrides
   };
 }

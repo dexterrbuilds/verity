@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowDown, ArrowUp, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { formatCompact, formatDate, formatPercent } from "@/lib/utils";
+import { dataOriginLabel, formatCompact, formatDate, formatPercent, verificationLabel } from "@/lib/utils";
 import type { EnrichedMarket } from "@/types";
 
 export function MarketCard({ market }: { market: EnrichedMarket }) {
@@ -13,9 +13,13 @@ export function MarketCard({ market }: { market: EnrichedMarket }) {
         <CardContent className="flex h-full flex-col gap-4">
           <div className="flex items-start justify-between gap-3">
             <div className="space-y-2">
-              <Badge tone={market.resolutionStatus === "active" ? "accent" : market.resolutionStatus === "resolved" ? "positive" : "warning"}>
-                {market.resolutionStatus}
-              </Badge>
+              <div className="flex flex-wrap gap-2">
+                <Badge tone={market.resolutionStatus === "active" ? "accent" : market.resolutionStatus === "resolved" ? "positive" : "warning"}>
+                  {market.resolutionStatus}
+                </Badge>
+                <Badge>{dataOriginLabel(market.dataOrigin)}</Badge>
+                {market.verificationStatus !== "unverified" ? <Badge tone="positive">{verificationLabel(market.verificationStatus)}</Badge> : null}
+              </div>
               <h2 className="line-clamp-3 text-base font-semibold leading-snug group-hover:text-accent">{market.question}</h2>
             </div>
             <div className="text-right">

@@ -3,6 +3,10 @@ import test from "node:test";
 import { getForecasterBySlug, getMarketBySlug, getMarkets, resolveDataMode } from "@/lib/data";
 import { normalizeMarket, toPercent } from "@/lib/data/normalize";
 import { marketSchema, resolveMarketSchema } from "@/features/admin/validation";
+import { evaluateHealth } from "@/lib/health";
+import { adminMutationRevalidationPaths } from "@/lib/revalidation";
+import { absoluteUrl, siteConfig } from "@/lib/site";
+import { dataOriginLabel } from "@/lib/utils";
 import type { Database } from "@/types/database";
 
 test("demo mode resolves to local data", async () => {
@@ -70,6 +74,8 @@ test("database normalization handles numeric strings", () => {
     resolution_status: "active",
     resolution_outcome: null,
     resolution_rules: null,
+    data_origin: "manually_curated",
+    verification_status: "unverified",
     created_at: "2026-01-01",
     updated_at: "2026-01-01"
   };
@@ -86,6 +92,10 @@ test("admin market validation rejects resolved market without outcome", () => {
   const parsed = marketSchema.safeParse({
     question: "Will this resolve?",
     slug: "will-this-resolve",
+    description: "A real market description.",
+    protocolId: "",
+    categoryId: "",
+    sourceUrl: "",
     currentProbability: 50,
     previousProbability: 40,
     volume: 1,
@@ -96,6 +106,35 @@ test("admin market validation rejects resolved market without outcome", () => {
     resolutionRules: "Rules"
   });
   assert.equal(parsed.success, false);
+});
+
+test("health endpoint model reports demo mode honestly", async () => {
+  const result = await evaluateHealth("demo");
+  assert.equal(result.status, "healthy");
+  assert.equal(result.database, false);
+});
+
+test("health endpoint model degrades on database failure", async () => {
+  const result = await evaluateHealth("connected", async () => false);
+  assert.equal(result.status, "degraded");
+  assert.equal(result.database, false);
+});
+
+test("successful mutations revalidate public and admin routes", () => {
+  assert.ok(adminMutationRevalidationPaths.includes("/"));
+  assert.ok(adminMutationRevalidationPaths.includes("/markets/[slug]"));
+  assert.ok(adminMutationRevalidationPaths.includes("/forecasters/[slug]"));
+  assert.ok(adminMutationRevalidationPaths.includes("/admin"));
+});
+
+test("site URL helper creates canonical absolute URLs", () => {
+  assert.equal(siteConfig.xHandle, "@UseVerity");
+  assert.equal(absoluteUrl("/markets/example"), "http://localhost:3000/markets/example");
+});
+
+test("data origin labels distinguish demo and curated records", () => {
+  assert.equal(dataOriginLabel("demo"), "Demo data");
+  assert.equal(dataOriginLabel("manually_curated"), "Manually curated");
 });
 
 test("resolve-market validation rejects invalid resolved outcome", () => {

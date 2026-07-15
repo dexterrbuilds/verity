@@ -9,7 +9,7 @@ import { getCatalogData, getMarkets } from "@/lib/data";
 
 export const metadata: Metadata = {
   title: "Markets",
-  description: "Search and filter Verity's demo onchain market directory."
+  description: "Search and filter Verity's tracked onchain market directory."
 };
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -27,17 +27,20 @@ export default async function MarketsPage({ searchParams }: { searchParams?: Pro
   const status = value(params, "status");
   const timeframe = value(params, "timeframe");
   const sort = value(params, "sort") || "trending";
-  const [{ categories, protocols }, { markets: results }] = await Promise.all([
+  const [{ categories, protocols }, { data, markets: results }] = await Promise.all([
     getCatalogData(),
     getMarkets({ q, category, protocol, status, timeframe, sort })
   ]);
+  const demo = data.mode === "demo";
 
   return (
     <section className="container-page py-10">
       <div className="flex flex-col gap-2">
         <Badge tone="accent">Markets</Badge>
         <h1 className="text-4xl font-bold tracking-tight">Onchain market directory</h1>
-        <p className="max-w-3xl text-muted-foreground">Searchable demo markets with probability movement, volume, resolution status, and tracked forecaster conviction.</p>
+        <p className="max-w-3xl text-muted-foreground">
+          {demo ? "Searchable demo markets with probability movement, volume, resolution status, and tracked forecaster conviction." : "Searchable tracked markets with probability movement, volume, resolution status, and forecaster conviction."}
+        </p>
       </div>
 
       <form className="mt-8 grid gap-3 rounded-lg border bg-card p-4 md:grid-cols-[1.4fr_repeat(5,1fr)_auto]" aria-label="Market filters">
