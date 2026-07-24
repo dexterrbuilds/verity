@@ -74,6 +74,25 @@ The MVP includes:
 
 This early version uses curated data while the platform evolves toward broader integrations.
 
+## Market Ingestion
+
+Version 1 adds a Polymarket ingestion layer:
+
+```text
+External source -> normalize -> Supabase -> repository -> UI
+```
+
+Run connected syncs with:
+
+```bash
+npm run sync:markets
+npm run sync:market -- <polymarket-market-id>
+```
+
+The protected cron-compatible endpoint is `/api/sync/markets` and requires `SYNC_SECRET`.
+
+See `docs/MARKET_INGESTION.md` for provider architecture and extension notes.
+
 ## Long-Term Vision
 
 Our long-term vision is to become the shared coordination layer for onchain markets.

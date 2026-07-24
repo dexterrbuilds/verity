@@ -46,7 +46,7 @@ async function verifySchema() {
     supabase.from("categories").select("id,slug,data_origin,verification_status,updated_at", { head: true }).limit(1),
     supabase.from("protocols").select("id,slug,data_origin,verification_status", { head: true }).limit(1),
     supabase.from("forecasters").select("id,slug,data_origin,verification_status,profile_status", { head: true }).limit(1),
-    supabase.from("markets").select("id,slug,data_origin,verification_status,source_url", { head: true }).limit(1),
+    supabase.from("markets").select("id,slug,provider,provider_market_id,data_origin,verification_status,source_url,image_url,tags,last_synced_at,sync_status", { head: true }).limit(1),
     supabase.from("forecasts").select("id,forecaster_id,market_id,data_origin,verification_status", { head: true }).limit(1),
     supabase.from("market_probability_history").select("id,market_id,probability,recorded_at", { head: true }).limit(1),
     supabase.from("insights").select("id,data_origin,verification_status", { head: true }).limit(1)

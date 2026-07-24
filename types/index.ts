@@ -28,10 +28,14 @@ export type Market = {
   id: string;
   protocolId: string;
   categoryId: string;
+  provider?: string;
+  providerMarketId?: string;
   slug: string;
   question: string;
   description: string;
   sourceUrl: string;
+  imageUrl?: string;
+  tags?: string[];
   currentProbability: number;
   previousProbability: number;
   volume: number;
@@ -42,6 +46,8 @@ export type Market = {
   resolutionRules: string;
   dataOrigin: DataOrigin;
   verificationStatus: VerificationStatus;
+  lastSyncedAt?: string;
+  syncStatus?: string;
   createdAt: string;
   updatedAt: string;
 };

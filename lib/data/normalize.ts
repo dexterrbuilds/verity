@@ -99,10 +99,14 @@ export function normalizeMarket(row: Row<"markets">): Market {
     id: row.id,
     protocolId: row.protocol_id ?? "",
     categoryId: row.category_id ?? "",
+    provider: row.provider ?? undefined,
+    providerMarketId: row.provider_market_id ?? undefined,
     slug: row.slug,
     question: row.question,
     description: row.description ?? "",
     sourceUrl: row.source_url ?? "",
+    imageUrl: row.image_url ?? undefined,
+    tags: row.tags ?? [],
     currentProbability: toPercent(row.current_probability, "current_probability"),
     previousProbability: toPercent(row.previous_probability, "previous_probability"),
     volume: toNumber(row.volume, "volume"),
@@ -113,6 +117,8 @@ export function normalizeMarket(row: Row<"markets">): Market {
     resolutionRules: row.resolution_rules ?? "",
     dataOrigin: toDataOrigin(row.data_origin),
     verificationStatus: toVerificationStatus(row.verification_status),
+    lastSyncedAt: row.last_synced_at ?? undefined,
+    syncStatus: row.sync_status ?? undefined,
     createdAt: toDateString(row.created_at),
     updatedAt: toDateString(row.updated_at)
   };

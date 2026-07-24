@@ -16,6 +16,19 @@ supabase db push
 - `market_probability_history`
 - `insights`
 
+## Ingestion Columns
+
+Markets include provider sync fields:
+
+- `provider`
+- `provider_market_id`
+- `image_url`
+- `tags`
+- `last_synced_at`
+- `sync_status`
+
+Provider-backed rows dedupe on `provider + provider_market_id`. Manual records can leave those fields empty. Probability history has a unique `market_id + recorded_at` constraint.
+
 ## Enums
 
 - `resolution_status`: `active`, `resolved`, `cancelled`

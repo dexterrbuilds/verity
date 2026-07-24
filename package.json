@@ -12,7 +12,9 @@
     "test": "tsx --test tests/*.test.ts",
     "seed": "tsx scripts/seed-summary.ts",
     "seed:supabase": "tsx scripts/seed-supabase.ts",
-    "verify:supabase": "tsx scripts/verify-supabase.ts"
+    "verify:supabase": "tsx scripts/verify-supabase.ts",
+    "sync:markets": "tsx scripts/sync-markets.ts",
+    "sync:market": "tsx scripts/sync-market.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.110.5",

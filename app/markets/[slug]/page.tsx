@@ -67,6 +67,8 @@ export default async function MarketDetailPage({ params }: { params: Promise<Par
             <p><span className="block font-semibold">{market.participantCount}</span><span className="text-sm text-muted-foreground">Participants</span></p>
             <p><span className="block font-semibold">{formatDate(market.resolutionDate)}</span><span className="text-sm text-muted-foreground">Resolution date</span></p>
             <p className="flex items-center gap-2"><Users className="h-4 w-4 text-accent" /><span>{market.conviction.trackedForecasterCount} tracked</span></p>
+            {market.provider ? <p><span className="block font-semibold capitalize">{market.provider}</span><span className="text-sm text-muted-foreground">Provider</span></p> : null}
+            {market.lastSyncedAt ? <p><span className="block font-semibold">{formatDate(market.lastSyncedAt)}</span><span className="text-sm text-muted-foreground">Last synced</span></p> : null}
           </CardContent>
         </Card>
       </div>

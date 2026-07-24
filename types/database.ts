@@ -98,10 +98,14 @@ export type Database = {
           id: string;
           protocol_id: string | null;
           category_id: string | null;
+          provider: string | null;
+          provider_market_id: string | null;
           slug: string;
           question: string;
           description: string | null;
           source_url: string | null;
+          image_url: string | null;
+          tags: string[] | null;
           current_probability: number | string;
           previous_probability: number | string;
           volume: number | string;
@@ -112,6 +116,8 @@ export type Database = {
           resolution_rules: string | null;
           data_origin: DataOrigin;
           verification_status: VerificationStatus;
+          last_synced_at: string | null;
+          sync_status: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -119,10 +125,14 @@ export type Database = {
           id?: string;
           protocol_id?: string | null;
           category_id?: string | null;
+          provider?: string | null;
+          provider_market_id?: string | null;
           slug: string;
           question: string;
           description?: string | null;
           source_url?: string | null;
+          image_url?: string | null;
+          tags?: string[] | null;
           current_probability: number;
           previous_probability: number;
           volume?: number;
@@ -133,6 +143,8 @@ export type Database = {
           resolution_rules?: string | null;
           data_origin?: DataOrigin;
           verification_status?: VerificationStatus;
+          last_synced_at?: string | null;
+          sync_status?: string | null;
           created_at?: string;
           updated_at?: string;
         };

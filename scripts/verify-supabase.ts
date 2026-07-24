@@ -14,7 +14,7 @@ const tableChecks = [
   ["categories", "id,slug,data_origin,verification_status,updated_at"],
   ["protocols", "id,slug,data_origin,verification_status"],
   ["forecasters", "id,slug,data_origin,verification_status,profile_status"],
-  ["markets", "id,slug,source_url,data_origin,verification_status"],
+  ["markets", "id,slug,provider,provider_market_id,source_url,image_url,tags,last_synced_at,sync_status,data_origin,verification_status"],
   ["forecasts", "id,forecaster_id,market_id,data_origin,verification_status"],
   ["market_probability_history", "id,market_id,probability,recorded_at"],
   ["insights", "id,data_origin,verification_status"]

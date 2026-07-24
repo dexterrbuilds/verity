@@ -62,10 +62,14 @@ test("database normalization handles numeric strings", () => {
     id: "m1",
     protocol_id: null,
     category_id: null,
+    provider: null,
+    provider_market_id: null,
     slug: "market",
     question: "Will it happen?",
     description: null,
     source_url: null,
+    image_url: null,
+    tags: [],
     current_probability: "61.5",
     previous_probability: "57.25",
     volume: "1000.50",
@@ -76,6 +80,8 @@ test("database normalization handles numeric strings", () => {
     resolution_rules: null,
     data_origin: "manually_curated",
     verification_status: "unverified",
+    last_synced_at: null,
+    sync_status: null,
     created_at: "2026-01-01",
     updated_at: "2026-01-01"
   };

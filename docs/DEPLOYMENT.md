@@ -18,6 +18,8 @@
 14. Create a small test record.
 15. Confirm the public page updates after mutation.
 16. Remove or clearly label temporary test data.
+17. Configure `SYNC_SECRET` if using `/api/sync/markets` or Vercel Cron.
+18. Run `npm run sync:markets` once connected setup is verified.
 
 ## Supabase
 
@@ -58,3 +60,7 @@ Admin mutations call `revalidatePath` for the landing page, overview, market dir
 ## Health
 
 `GET /api/health` returns a no-store JSON status. Demo mode reports a healthy demo status without touching Supabase. Connected mode performs one lightweight public read and returns `503` if the database is unavailable.
+
+## Market Sync
+
+`GET` or `POST /api/sync/markets` runs provider ingestion for Vercel Cron. It requires `Authorization: Bearer <SYNC_SECRET>` or `?token=<SYNC_SECRET>`. The endpoint never exposes provider data directly to pages; it only stores normalized rows in Supabase.

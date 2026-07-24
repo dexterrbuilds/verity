@@ -6,6 +6,7 @@ const envSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().optional().or(z.literal("")),
   ADMIN_PASSWORD: z.string().min(8).optional().or(z.literal("")),
   SESSION_SECRET: z.string().min(32).optional().or(z.literal("")),
+  SYNC_SECRET: z.string().min(24).optional().or(z.literal("")),
   NEXT_PUBLIC_SITE_URL: z.string().url().optional().or(z.literal("")),
   NEXT_PUBLIC_DATA_MODE: z.enum(["demo", "connected"]).optional()
 });
@@ -16,6 +17,7 @@ export const env = envSchema.parse({
   SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
   ADMIN_PASSWORD: process.env.ADMIN_PASSWORD,
   SESSION_SECRET: process.env.SESSION_SECRET,
+  SYNC_SECRET: process.env.SYNC_SECRET,
   NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
   NEXT_PUBLIC_DATA_MODE: process.env.NEXT_PUBLIC_DATA_MODE
 });
