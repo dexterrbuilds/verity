@@ -1,3 +1,5 @@
+import "./load-env";
+
 import { syncMarkets } from "@/lib/ingestion/sync/markets";
 
 async function main() {

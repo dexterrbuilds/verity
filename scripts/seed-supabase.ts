@@ -1,3 +1,5 @@
+import "./load-env";
+
 import { createHash } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { categories, forecasts, forecasters, insights, markets, probabilityHistory, protocols } from "@/lib/data/seed";

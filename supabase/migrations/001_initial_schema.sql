@@ -1,10 +1,39 @@
 create extension if not exists pgcrypto;
 
-create type resolution_status as enum ('active', 'resolved', 'cancelled');
-create type forecast_position as enum ('yes', 'no', 'neutral');
-create type data_origin as enum ('demo', 'manually_curated', 'integrated');
-create type verification_status as enum ('unverified', 'source_checked', 'protocol_verified');
-create type profile_status as enum ('unclaimed', 'claimed');
+do $$
+begin
+  create type resolution_status as enum ('active', 'resolved', 'cancelled');
+exception
+  when duplicate_object then null;
+end $$;
+
+do $$
+begin
+  create type forecast_position as enum ('yes', 'no', 'neutral');
+exception
+  when duplicate_object then null;
+end $$;
+
+do $$
+begin
+  create type data_origin as enum ('demo', 'manually_curated', 'integrated');
+exception
+  when duplicate_object then null;
+end $$;
+
+do $$
+begin
+  create type verification_status as enum ('unverified', 'source_checked', 'protocol_verified');
+exception
+  when duplicate_object then null;
+end $$;
+
+do $$
+begin
+  create type profile_status as enum ('unclaimed', 'claimed');
+exception
+  when duplicate_object then null;
+end $$;
 
 create table public.forecasters (
   id uuid primary key default gen_random_uuid(),

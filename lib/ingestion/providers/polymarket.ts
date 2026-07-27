@@ -166,7 +166,7 @@ export const polymarketProvider: MarketProvider = {
   async fetchMarkets() {
     const [active, closed] = await Promise.all([
       fetchMarketPage({ active: "true", closed: "false", limit: String(MARKET_LIMIT), order: "volume", ascending: "false" }),
-      fetchMarketPage({ closed: "true", limit: "25", order: "closed_time", ascending: "false" })
+      fetchMarketPage({ closed: "true", limit: "25" })
     ]);
     const seen = new Set<string>();
     const markets: ExternalMarket[] = [];

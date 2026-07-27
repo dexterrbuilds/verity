@@ -1,3 +1,5 @@
+import "./load-env";
+
 import { createClient } from "@supabase/supabase-js";
 import { getModeError, resolveDataMode } from "@/lib/data/mode";
 import { env } from "@/lib/env";
