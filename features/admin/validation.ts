@@ -13,10 +13,9 @@ export const adminLoginSchema = z.object({
 export const forecasterSchema = z.object({
   displayName: z.string().min(2),
   slug: slugSchema,
-  walletAddress: z.string().min(4),
+  walletAddress: z.string().optional().or(z.literal("")),
   xHandle: z.string().optional(),
-  bio: z.string().min(10),
-  strongestDomain: z.string().min(2)
+  bio: z.string().min(10)
 });
 
 export const editForecasterSchema = forecasterSchema.extend({
@@ -77,8 +76,7 @@ export const editForecastSchema = forecastSchema.extend({
 });
 
 export const markForecastSchema = z.object({
-  id: z.string().min(1),
-  wasCorrect: z.enum(["true", "false"])
+  id: z.string().min(1)
 });
 
 export const protocolSchema = z.object({

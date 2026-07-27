@@ -110,7 +110,7 @@ export default async function AdminPage() {
         </Card>
         <Card>
           <CardHeader><h2 className="font-semibold">Mark forecast</h2></CardHeader>
-          <CardContent><MarkForecastForm forecasts={forecasts} /></CardContent>
+          <CardContent><MarkForecastForm forecasts={forecasts} forecasters={forecasters} markets={markets} /></CardContent>
         </Card>
         <Card>
           <CardHeader><h2 className="font-semibold">Add protocol</h2></CardHeader>

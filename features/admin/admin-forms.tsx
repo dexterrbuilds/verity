@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input, Select, Textarea } from "@/components/ui/input";
 import {
@@ -33,6 +33,12 @@ function confirmStateChange(message: string) {
   return window.confirm(message);
 }
 
+function forecastLabel(forecast: Forecast, forecasters: Forecaster[], markets: Market[]) {
+  const forecaster = forecasters.find((item) => item.id === forecast.forecasterId)?.displayName ?? "Unknown forecaster";
+  const market = markets.find((item) => item.id === forecast.marketId)?.question ?? "Unknown market";
+  return `${forecaster} · ${forecast.predictedProbability}% ${forecast.position.toUpperCase()} · ${market}`;
+}
+
 export function LoginForm() {
   const [state, action, pending] = useActionState(loginAction, initial);
   return (
@@ -53,9 +59,8 @@ export function ForecasterForm() {
     <form action={action} className="grid gap-3">
       <Input name="displayName" placeholder="Display name" required />
       <Input name="slug" placeholder="slug-like-this" required />
-      <Input name="walletAddress" placeholder="Wallet label or address" required />
+      <Input name="walletAddress" placeholder="Wallet label or address" />
       <Input name="xHandle" placeholder="@handle" />
-      <Input name="strongestDomain" placeholder="Strongest domain" required />
       <Textarea name="bio" placeholder="Short bio" required />
       <Status state={state} />
       <Button disabled={pending}>{pending ? "Saving..." : "Add Forecaster"}</Button>
@@ -107,13 +112,14 @@ export function MarketForm({ protocols, categories }: { protocols: Protocol[]; c
 
 export function ForecastForm({ forecasters, markets }: { forecasters: Forecaster[]; markets: Market[] }) {
   const [state, action, pending] = useActionState(createForecastAction, initial);
+  const activeMarkets = markets.filter((market) => market.resolutionStatus === "active");
   return (
     <form action={action} className="grid gap-3">
       <Select name="forecasterId" required>
         {forecasters.map((forecaster) => <option key={forecaster.id} value={forecaster.id}>{forecaster.displayName}</option>)}
       </Select>
       <Select name="marketId" required>
-        {markets.map((market) => <option key={market.id} value={market.id}>{market.question}</option>)}
+        {activeMarkets.map((market) => <option key={market.id} value={market.id}>{market.question}</option>)}
       </Select>
       <div className="grid gap-3 sm:grid-cols-3">
         <Input name="predictedProbability" type="number" placeholder="Prediction" required />
@@ -134,18 +140,20 @@ export function ForecastForm({ forecasters, markets }: { forecasters: Forecaster
 
 export function EditForecasterForm({ forecasters }: { forecasters: Forecaster[] }) {
   const [state, action, pending] = useActionState(editForecasterAction, initial);
-  const first = forecasters[0];
+  const [selectedId, setSelectedId] = useState(forecasters[0]?.id ?? "");
+  const selected = forecasters.find((forecaster) => forecaster.id === selectedId) ?? forecasters[0];
   return (
     <form action={action} className="grid gap-3">
-      <Select name="id" required>
+      <Select name="id" value={selected?.id ?? ""} onChange={(event) => setSelectedId(event.target.value)} required>
         {forecasters.map((forecaster) => <option key={forecaster.id} value={forecaster.id}>{forecaster.displayName}</option>)}
       </Select>
-      <Input name="displayName" defaultValue={first?.displayName} placeholder="Display name" required />
-      <Input name="slug" defaultValue={first?.slug} placeholder="slug-like-this" required />
-      <Input name="walletAddress" defaultValue={first?.walletAddress} placeholder="Wallet label or address" required />
-      <Input name="xHandle" defaultValue={first?.xHandle} placeholder="@handle" />
-      <Input name="strongestDomain" defaultValue={first?.strongestDomain} placeholder="Strongest domain" required />
-      <Textarea name="bio" defaultValue={first?.bio} placeholder="Short bio" required />
+      <div key={selected?.id ?? "empty"} className="contents">
+        <Input name="displayName" defaultValue={selected?.displayName} placeholder="Display name" required />
+        <Input name="slug" defaultValue={selected?.slug} placeholder="slug-like-this" required />
+        <Input name="walletAddress" defaultValue={selected?.walletAddress} placeholder="Wallet label or address" />
+        <Input name="xHandle" defaultValue={selected?.xHandle} placeholder="@handle" />
+        <Textarea name="bio" defaultValue={selected?.bio} placeholder="Short bio" required />
+      </div>
       <Status state={state} />
       <Button disabled={pending}>{pending ? "Saving..." : "Edit Forecaster"}</Button>
     </form>
@@ -154,44 +162,47 @@ export function EditForecasterForm({ forecasters }: { forecasters: Forecaster[] 
 
 export function EditMarketForm({ markets, protocols, categories }: { markets: Market[]; protocols: Protocol[]; categories: Category[] }) {
   const [state, action, pending] = useActionState(editMarketAction, initial);
-  const first = markets[0];
+  const [selectedId, setSelectedId] = useState(markets[0]?.id ?? "");
+  const selected = markets.find((market) => market.id === selectedId) ?? markets[0];
   return (
     <form action={action} className="grid gap-3">
-      <Select name="id" required>
+      <Select name="id" value={selected?.id ?? ""} onChange={(event) => setSelectedId(event.target.value)} required>
         {markets.map((market) => <option key={market.id} value={market.id}>{market.question}</option>)}
       </Select>
-      <Textarea name="question" defaultValue={first?.question} placeholder="Market question" required />
-      <Input name="slug" defaultValue={first?.slug} placeholder="market-slug" required />
-      <Textarea name="description" defaultValue={first?.description} placeholder="Short market description" required />
-      <div className="grid gap-3 sm:grid-cols-2">
-        <Select name="protocolId" defaultValue={first?.protocolId ?? ""}>
-          <option value="">No protocol</option>
-          {protocols.map((protocol) => <option key={protocol.id} value={protocol.id}>{protocol.name}</option>)}
+      <div key={selected?.id ?? "empty"} className="contents">
+        <Textarea name="question" defaultValue={selected?.question} placeholder="Market question" required />
+        <Input name="slug" defaultValue={selected?.slug} placeholder="market-slug" required />
+        <Textarea name="description" defaultValue={selected?.description} placeholder="Short market description" required />
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Select name="protocolId" defaultValue={selected?.protocolId ?? ""}>
+            <option value="">No protocol</option>
+            {protocols.map((protocol) => <option key={protocol.id} value={protocol.id}>{protocol.name}</option>)}
+          </Select>
+          <Select name="categoryId" defaultValue={selected?.categoryId ?? ""}>
+            <option value="">No category</option>
+            {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+          </Select>
+        </div>
+        <Input name="sourceUrl" type="url" defaultValue={selected?.sourceUrl} placeholder="https://source.example/market" />
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Input name="currentProbability" type="number" defaultValue={selected?.currentProbability} placeholder="Current probability" required />
+          <Input name="previousProbability" type="number" defaultValue={selected?.previousProbability} placeholder="Previous probability" required />
+          <Input name="volume" type="number" defaultValue={selected?.volume} placeholder="Volume" required />
+          <Input name="participantCount" type="number" defaultValue={selected?.participantCount} placeholder="Participants" required />
+        </div>
+        <Input name="resolutionDate" type="date" defaultValue={selected?.resolutionDate.slice(0, 10)} required />
+        <Select name="resolutionStatus" defaultValue={selected?.resolutionStatus ?? "active"}>
+          <option value="active">Active</option>
+          <option value="resolved">Resolved</option>
+          <option value="cancelled">Cancelled</option>
         </Select>
-        <Select name="categoryId" defaultValue={first?.categoryId ?? ""}>
-          <option value="">No category</option>
-          {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+        <Select name="resolutionOutcome" defaultValue={selected?.resolutionOutcome ?? ""}>
+          <option value="">No outcome</option>
+          <option value="yes">Yes</option>
+          <option value="no">No</option>
         </Select>
+        <Textarea name="resolutionRules" defaultValue={selected?.resolutionRules} placeholder="Resolution rules" required />
       </div>
-      <Input name="sourceUrl" type="url" defaultValue={first?.sourceUrl} placeholder="https://source.example/market" />
-      <div className="grid gap-3 sm:grid-cols-2">
-        <Input name="currentProbability" type="number" defaultValue={first?.currentProbability} placeholder="Current probability" required />
-        <Input name="previousProbability" type="number" defaultValue={first?.previousProbability} placeholder="Previous probability" required />
-        <Input name="volume" type="number" defaultValue={first?.volume} placeholder="Volume" required />
-        <Input name="participantCount" type="number" defaultValue={first?.participantCount} placeholder="Participants" required />
-      </div>
-      <Input name="resolutionDate" type="date" defaultValue={first?.resolutionDate} required />
-      <Select name="resolutionStatus" defaultValue={first?.resolutionStatus ?? "active"}>
-        <option value="active">Active</option>
-        <option value="resolved">Resolved</option>
-        <option value="cancelled">Cancelled</option>
-      </Select>
-      <Select name="resolutionOutcome" defaultValue={first?.resolutionOutcome ?? ""}>
-        <option value="">No outcome</option>
-        <option value="yes">Yes</option>
-        <option value="no">No</option>
-      </Select>
-      <Textarea name="resolutionRules" defaultValue={first?.resolutionRules} placeholder="Resolution rules" required />
       <Status state={state} />
       <Button disabled={pending}>{pending ? "Saving..." : "Edit Market"}</Button>
     </form>
@@ -200,6 +211,7 @@ export function EditMarketForm({ markets, protocols, categories }: { markets: Ma
 
 export function ResolveMarketForm({ markets }: { markets: Market[] }) {
   const [state, action, pending] = useActionState(resolveMarketAction, initial);
+  const activeMarkets = markets.filter((market) => market.resolutionStatus === "active");
   return (
     <form
       action={action}
@@ -209,7 +221,7 @@ export function ResolveMarketForm({ markets }: { markets: Market[] }) {
       }}
     >
       <Select name="id" required>
-        {markets.map((market) => <option key={market.id} value={market.id}>{market.question}</option>)}
+        {activeMarkets.map((market) => <option key={market.id} value={market.id}>{market.question}</option>)}
       </Select>
       <Select name="resolutionStatus" defaultValue="resolved">
         <option value="resolved">Resolved</option>
@@ -226,48 +238,48 @@ export function ResolveMarketForm({ markets }: { markets: Market[] }) {
   );
 }
 
-export function MarkForecastForm({ forecasts }: { forecasts: Forecast[] }) {
+export function MarkForecastForm({ forecasts, forecasters, markets }: { forecasts: Forecast[]; forecasters: Forecaster[]; markets: Market[] }) {
   const [state, action, pending] = useActionState(markForecastAction, initial);
+  const resolvedForecasts = forecasts.filter((forecast) => forecast.isResolved);
   return (
     <form action={action} className="grid gap-3">
       <Select name="id" required>
-        {forecasts.map((forecast) => <option key={forecast.id} value={forecast.id}>{forecast.id}</option>)}
-      </Select>
-      <Select name="wasCorrect" defaultValue="true">
-        <option value="true">Correct</option>
-        <option value="false">Incorrect</option>
+        {resolvedForecasts.map((forecast) => <option key={forecast.id} value={forecast.id}>{forecastLabel(forecast, forecasters, markets)}</option>)}
       </Select>
       <Status state={state} />
-      <Button disabled={pending}>{pending ? "Saving..." : "Mark Forecast"}</Button>
+      <Button disabled={pending}>{pending ? "Saving..." : "Reconcile Forecast"}</Button>
     </form>
   );
 }
 
 export function EditForecastForm({ forecasts, forecasters, markets }: { forecasts: Forecast[]; forecasters: Forecaster[]; markets: Market[] }) {
   const [state, action, pending] = useActionState(editForecastAction, initial);
-  const first = forecasts[0];
+  const [selectedId, setSelectedId] = useState(forecasts[0]?.id ?? "");
+  const selected = forecasts.find((forecast) => forecast.id === selectedId) ?? forecasts[0];
   return (
     <form action={action} className="grid gap-3">
-      <Select name="id" required>
-        {forecasts.map((forecast) => <option key={forecast.id} value={forecast.id}>{forecast.id}</option>)}
+      <Select name="id" value={selected?.id ?? ""} onChange={(event) => setSelectedId(event.target.value)} required>
+        {forecasts.map((forecast) => <option key={forecast.id} value={forecast.id}>{forecastLabel(forecast, forecasters, markets)}</option>)}
       </Select>
-      <Select name="forecasterId" defaultValue={first?.forecasterId} required>
-        {forecasters.map((forecaster) => <option key={forecaster.id} value={forecaster.id}>{forecaster.displayName}</option>)}
-      </Select>
-      <Select name="marketId" defaultValue={first?.marketId} required>
-        {markets.map((market) => <option key={market.id} value={market.id}>{market.question}</option>)}
-      </Select>
-      <div className="grid gap-3 sm:grid-cols-3">
-        <Input name="predictedProbability" type="number" defaultValue={first?.predictedProbability} placeholder="Prediction" required />
-        <Input name="confidence" type="number" defaultValue={first?.confidence} placeholder="Confidence" required />
-        <Select name="position" defaultValue={first?.position ?? "yes"}>
-          <option value="yes">Yes</option>
-          <option value="no">No</option>
-          <option value="neutral">Neutral</option>
+      <div key={selected?.id ?? "empty"} className="contents">
+        <Select name="forecasterId" defaultValue={selected?.forecasterId} required>
+          {forecasters.map((forecaster) => <option key={forecaster.id} value={forecaster.id}>{forecaster.displayName}</option>)}
         </Select>
+        <Select name="marketId" defaultValue={selected?.marketId} required>
+          {markets.map((market) => <option key={market.id} value={market.id}>{market.question}</option>)}
+        </Select>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <Input name="predictedProbability" type="number" defaultValue={selected?.predictedProbability} placeholder="Prediction" required />
+          <Input name="confidence" type="number" defaultValue={selected?.confidence} placeholder="Confidence" required />
+          <Select name="position" defaultValue={selected?.position ?? "yes"}>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+            <option value="neutral">Neutral</option>
+          </Select>
+        </div>
+        <Input name="forecastedAt" type="datetime-local" defaultValue={selected?.forecastedAt.slice(0, 16)} required />
+        <Textarea name="reasoning" defaultValue={selected?.reasoning} placeholder="Short reasoning" required />
       </div>
-      <Input name="forecastedAt" type="datetime-local" defaultValue={first?.forecastedAt.slice(0, 16)} required />
-      <Textarea name="reasoning" defaultValue={first?.reasoning} placeholder="Short reasoning" required />
       <Status state={state} />
       <Button disabled={pending}>{pending ? "Saving..." : "Edit Forecast"}</Button>
     </form>

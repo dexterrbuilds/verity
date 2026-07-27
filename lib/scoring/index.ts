@@ -1,4 +1,5 @@
 import type { Category, Forecast, ForecasterMetrics, Market, MarketConviction } from "@/types";
+export { derivedForecastOutcome, reconcileForecastOutcomes } from "@/lib/scoring/forecast-outcomes";
 
 const INFLUENCE_CAP = 0.35;
 const DEFAULT_CATEGORY_LABELS: Record<string, string> = {

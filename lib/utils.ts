@@ -1,6 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import type { DataOrigin, ProfileStatus, VerificationStatus } from "@/types";
+import type { DataOrigin, Forecaster, ProfileStatus, VerificationStatus } from "@/types";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -39,4 +39,8 @@ export function formatDate(value: string) {
     day: "numeric",
     year: "numeric"
   }).format(new Date(value));
+}
+
+export function formatForecasterIdentity(forecaster: Pick<Forecaster, "xHandle" | "walletAddress">) {
+  return [forecaster.xHandle, forecaster.walletAddress].filter(Boolean).join(" · ") || "Curated profile";
 }

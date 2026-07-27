@@ -2,11 +2,13 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { getForecasterBySlug, getMarketBySlug, getMarkets, resolveDataMode } from "@/lib/data";
 import { normalizeMarket, toPercent } from "@/lib/data/normalize";
-import { marketSchema, resolveMarketSchema } from "@/features/admin/validation";
+import { forecasterSchema, marketSchema, markForecastSchema, resolveMarketSchema } from "@/features/admin/validation";
 import { evaluateHealth } from "@/lib/health";
 import { adminMutationRevalidationPaths } from "@/lib/revalidation";
+import { derivedForecastOutcome } from "@/lib/scoring";
 import { absoluteUrl, siteConfig } from "@/lib/site";
-import { dataOriginLabel } from "@/lib/utils";
+import { dataOriginLabel, formatForecasterIdentity } from "@/lib/utils";
+import type { Forecast, Market } from "@/types";
 import type { Database } from "@/types/database";
 
 test("demo mode resolves to local data", async () => {
@@ -150,4 +152,71 @@ test("resolve-market validation rejects invalid resolved outcome", () => {
     resolutionOutcome: ""
   });
   assert.equal(parsed.success, false);
+});
+
+const resolvedMarket: Market = {
+  id: "m1",
+  protocolId: "",
+  categoryId: "",
+  slug: "resolved-market",
+  question: "Will this resolve yes?",
+  description: "Test market",
+  sourceUrl: "",
+  currentProbability: 100,
+  previousProbability: 50,
+  volume: 0,
+  participantCount: 0,
+  resolutionDate: "2026-07-01",
+  resolutionStatus: "resolved",
+  resolutionOutcome: "yes",
+  resolutionRules: "Rules",
+  dataOrigin: "manually_curated",
+  verificationStatus: "unverified",
+  createdAt: "2026-01-01",
+  updatedAt: "2026-01-01"
+};
+
+const baseForecast: Forecast = {
+  id: "f1",
+  forecasterId: "forecaster-1",
+  marketId: "m1",
+  predictedProbability: 70,
+  confidence: 60,
+  position: "yes",
+  reasoning: "Test reasoning",
+  forecastedAt: "2026-06-01",
+  isResolved: false,
+  wasCorrect: null,
+  scoreImpact: 0,
+  dataOrigin: "manually_curated",
+  verificationStatus: "unverified"
+};
+
+test("resolved market outcome drives forecast correctness", () => {
+  assert.deepEqual(derivedForecastOutcome(baseForecast, resolvedMarket), { isResolved: true, wasCorrect: true });
+  assert.deepEqual(derivedForecastOutcome({ ...baseForecast, position: "no" }, resolvedMarket), { isResolved: true, wasCorrect: false });
+  assert.deepEqual(derivedForecastOutcome({ ...baseForecast, position: "neutral" }, resolvedMarket), { isResolved: true, wasCorrect: null });
+});
+
+test("cancelled or active markets do not mark forecasts resolved", () => {
+  assert.deepEqual(derivedForecastOutcome(baseForecast, { ...resolvedMarket, resolutionStatus: "cancelled", resolutionOutcome: null }), {
+    isResolved: false,
+    wasCorrect: null
+  });
+});
+
+test("forecaster identity and admin schema allow curated profiles without wallets", () => {
+  const parsed = forecasterSchema.safeParse({
+    displayName: "Curated Analyst",
+    slug: "curated-analyst",
+    walletAddress: "",
+    xHandle: "@curated",
+    bio: "A curated forecaster profile."
+  });
+  assert.equal(parsed.success, true);
+  assert.equal(formatForecasterIdentity({ xHandle: "", walletAddress: "" }), "Curated profile");
+});
+
+test("forecast reconciliation action no longer accepts manual correctness", () => {
+  assert.equal(markForecastSchema.safeParse({ id: "forecast-1" }).success, true);
 });

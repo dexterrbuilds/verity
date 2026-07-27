@@ -7,7 +7,7 @@ import { PerformanceChart } from "@/components/charts/performance-chart";
 import { StatCard } from "@/components/stat-card";
 import { getForecasterBySlug, getForecasterStaticParams, marketById } from "@/lib/data";
 import { absoluteUrl } from "@/lib/site";
-import { dataOriginLabel, formatDate, formatPercent, profileStatusLabel, verificationLabel } from "@/lib/utils";
+import { dataOriginLabel, formatDate, formatForecasterIdentity, formatPercent, profileStatusLabel, verificationLabel } from "@/lib/utils";
 import type { EnrichedForecaster } from "@/types";
 import type { DataSet } from "@/lib/data/source";
 
@@ -63,7 +63,7 @@ export default async function ForecasterProfilePage({ params }: { params: Promis
               <Badge>{profileStatusLabel(forecaster.profileStatus)}</Badge>
               {forecaster.verificationStatus !== "unverified" ? <Badge tone="positive">{verificationLabel(forecaster.verificationStatus)}</Badge> : null}
             </div>
-            <p className="mt-2 text-muted-foreground">{forecaster.xHandle} · {forecaster.walletAddress}</p>
+            <p className="mt-2 text-muted-foreground">{formatForecasterIdentity(forecaster)}</p>
             <p className="mt-4 max-w-3xl leading-7 text-muted-foreground">{forecaster.bio}</p>
           </div>
         </div>

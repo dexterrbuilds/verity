@@ -2,7 +2,7 @@ import Link from "next/link";
 import { CheckCircle2, Flame } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { dataOriginLabel, formatPercent, profileStatusLabel, verificationLabel } from "@/lib/utils";
+import { dataOriginLabel, formatForecasterIdentity, formatPercent, profileStatusLabel, verificationLabel } from "@/lib/utils";
 import type { EnrichedForecaster } from "@/types";
 
 export function ForecasterCard({ forecaster }: { forecaster: EnrichedForecaster }) {
@@ -18,11 +18,12 @@ export function ForecasterCard({ forecaster }: { forecaster: EnrichedForecaster 
                 <h2 className="truncate font-semibold group-hover:text-accent">{forecaster.displayName}</h2>
                 {forecaster.isVerified ? <CheckCircle2 className="h-4 w-4 text-accent" aria-label="Verified" /> : null}
               </div>
-              <p className="truncate text-sm text-muted-foreground">{forecaster.xHandle} · {forecaster.walletAddress}</p>
+              <p className="truncate text-sm text-muted-foreground">{formatForecasterIdentity(forecaster)}</p>
             </div>
             <Badge tone="accent">#{metric?.rank ?? "-"}</Badge>
           </div>
           <div className="flex flex-wrap gap-2">
+            {(metric?.resolvedForecasts ?? 0) < 3 ? <Badge>Provisional score</Badge> : null}
             <Badge>{dataOriginLabel(forecaster.dataOrigin)}</Badge>
             <Badge>{profileStatusLabel(forecaster.profileStatus)}</Badge>
             {forecaster.verificationStatus !== "unverified" ? <Badge tone="positive">{verificationLabel(forecaster.verificationStatus)}</Badge> : null}

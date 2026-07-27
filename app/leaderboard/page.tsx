@@ -37,11 +37,9 @@ export default async function LeaderboardPage({ searchParams }: { searchParams?:
       <form className="mt-8 flex max-w-md gap-3">
         <Select name="domain" defaultValue={domain} aria-label="Leaderboard domain" onChange={undefined}>
           <option value="overall">Overall</option>
-          <option value="ai">AI</option>
-          <option value="solana">Solana</option>
-          <option value="defi">DeFi</option>
-          <option value="governance">Governance</option>
-          <option value="infrastructure">Infrastructure</option>
+          {data.categories.map((category) => (
+            <option key={category.id} value={category.slug}>{category.name}</option>
+          ))}
         </Select>
         <Button type="submit" variant="secondary">Apply</Button>
       </form>
@@ -76,7 +74,12 @@ export default async function LeaderboardPage({ searchParams }: { searchParams?:
                     <td className="px-4 py-4">{metric.verityScore.toFixed(1)}</td>
                     <td className="px-4 py-4">{formatPercent(metric.accuracy)}</td>
                     <td className="px-4 py-4">{formatPercent(metric.calibration)}</td>
-                    <td className="px-4 py-4">{metric.resolvedForecasts}</td>
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-2">
+                        <span>{metric.resolvedForecasts}</span>
+                        {metric.resolvedForecasts < 3 ? <Badge>Provisional</Badge> : null}
+                      </div>
+                    </td>
                     <td className="px-4 py-4">{forecaster.strongestDomain}</td>
                     <td className="px-4 py-4">
                       <div className="flex gap-1">

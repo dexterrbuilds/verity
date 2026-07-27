@@ -59,6 +59,31 @@ function mutationError(message: string, error: { code?: string; message?: string
   return { ok: false, message };
 }
 
+async function reconcileStoredForecastsForMarket(
+  supabase: NonNullable<ReturnType<typeof createServiceSupabaseClient>>,
+  marketId: string,
+  resolutionStatus: "resolved" | "cancelled",
+  resolutionOutcome: "yes" | "no" | ""
+) {
+  if (resolutionStatus === "cancelled") {
+    const { error } = await supabase.from("forecasts").update({
+      is_resolved: false,
+      was_correct: null,
+      score_impact: 0
+    }).eq("market_id", marketId);
+    return error;
+  }
+
+  const outcome = resolutionOutcome || null;
+  if (!outcome) return { message: "Resolved markets require an outcome." };
+  const [correct, incorrect, neutral] = await Promise.all([
+    supabase.from("forecasts").update({ is_resolved: true, was_correct: true }).eq("market_id", marketId).eq("position", outcome),
+    supabase.from("forecasts").update({ is_resolved: true, was_correct: false }).eq("market_id", marketId).in("position", outcome === "yes" ? ["no"] : ["yes"]),
+    supabase.from("forecasts").update({ is_resolved: true, was_correct: null }).eq("market_id", marketId).eq("position", "neutral")
+  ]);
+  return correct.error ?? incorrect.error ?? neutral.error ?? null;
+}
+
 export async function loginAction(_: unknown, formData: FormData) {
   if (await isLoginRateLimited()) {
     return { ok: false, message: "Too many attempts. Wait a few minutes and try again." };
@@ -87,8 +112,8 @@ export async function createForecasterAction(_: unknown, formData: FormData) {
   const { error } = await writable.supabase.from("forecasters").insert({
     slug: parsed.data.slug,
     display_name: parsed.data.displayName,
-    wallet_address: parsed.data.walletAddress,
-    x_handle: parsed.data.xHandle,
+    wallet_address: parsed.data.walletAddress || null,
+    x_handle: parsed.data.xHandle || null,
     bio: parsed.data.bio
   });
   if (error) return mutationError("Supabase rejected the forecaster insert.", error);
@@ -159,6 +184,7 @@ export async function createForecastAction(_: unknown, formData: FormData) {
     reasoning: parsed.data.reasoning,
     forecasted_at: parsed.data.forecastedAt
   });
+  if (error?.code === "23505") return { ok: false, message: "That forecaster already has a forecast for this market. Edit the existing forecast instead." };
   if (error) return mutationError("Supabase rejected the forecast insert.", error);
   revalidatePublicData();
   return { ok: true, message: "Forecast added." };
@@ -174,8 +200,8 @@ export async function editForecasterAction(_: unknown, formData: FormData) {
   const { data, error } = await writable.supabase.from("forecasters").update({
     slug: parsed.data.slug,
     display_name: parsed.data.displayName,
-    wallet_address: parsed.data.walletAddress,
-    x_handle: parsed.data.xHandle,
+    wallet_address: parsed.data.walletAddress || null,
+    x_handle: parsed.data.xHandle || null,
     bio: parsed.data.bio
   }).eq("id", parsed.data.id).select("id").maybeSingle();
   if (error) return mutationError("Supabase rejected the forecaster update.", error);
@@ -233,6 +259,8 @@ export async function resolveMarketAction(_: unknown, formData: FormData) {
   }).eq("id", parsed.data.id).select("id").maybeSingle();
   if (error) return mutationError("Supabase rejected the market resolution.", error);
   if (!data) return { ok: false, message: "Market not found." };
+  const forecastError = await reconcileStoredForecastsForMarket(writable.supabase, parsed.data.id, parsed.data.resolutionStatus, parsed.data.resolutionOutcome || "");
+  if (forecastError) return mutationError("Market was saved, but related forecasts could not be reconciled.", forecastError);
   revalidatePublicData();
   return { ok: true, message: "Market resolution saved." };
 }
@@ -244,14 +272,21 @@ export async function markForecastAction(_: unknown, formData: FormData) {
   if (!parsed.success) return { ok: false, message: "Choose a forecast and correctness value." };
   const writable = writableClientOrIssue();
   if (!writable.ok) return { ok: false, message: writable.message };
+  const { data: forecast, error: readError } = await writable.supabase.from("forecasts").select("id,market_id,position").eq("id", parsed.data.id).maybeSingle();
+  if (readError) return mutationError("Supabase rejected the forecast lookup.", readError);
+  if (!forecast) return { ok: false, message: "Forecast not found." };
+  const market = await getMarketById(forecast.market_id);
+  if (!market || market.resolutionStatus !== "resolved" || !market.resolutionOutcome) {
+    return { ok: false, message: "Resolve the market before reconciling forecast correctness." };
+  }
   const { data, error } = await writable.supabase.from("forecasts").update({
     is_resolved: true,
-    was_correct: parsed.data.wasCorrect === "true"
+    was_correct: forecast.position === "neutral" ? null : forecast.position === market.resolutionOutcome
   }).eq("id", parsed.data.id).select("id").maybeSingle();
   if (error) return mutationError("Supabase rejected the forecast update.", error);
   if (!data) return { ok: false, message: "Forecast not found." };
   revalidatePublicData();
-  return { ok: true, message: "Forecast correctness saved." };
+  return { ok: true, message: "Forecast correctness reconciled from market outcome." };
 }
 
 export async function createProtocolAction(_: unknown, formData: FormData) {

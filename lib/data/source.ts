@@ -4,7 +4,7 @@ import { getConnectedBaseData } from "@/lib/data/cache";
 import { getPublicSupabaseClient } from "@/lib/supabase/public-server";
 import { throwDataError } from "@/lib/data/errors";
 import { getDataMode, isDemoMode } from "@/lib/data/mode";
-import { buildForecasterMetrics, calculateAccuracy, calculateMarketConviction } from "@/lib/scoring";
+import { buildForecasterMetrics, calculateAccuracy, calculateMarketConviction, reconcileForecastOutcomes } from "@/lib/scoring";
 import {
   normalizeCategory,
   normalizeForecast,
@@ -35,7 +35,10 @@ export const getDataSet = cache(async (): Promise<DataSet> => {
       protocols: demoProtocols.map((protocol) => ({ ...protocol, dataOrigin: "demo" as const, verificationStatus: "unverified" as const })),
       markets: demoMarkets.map((market) => ({ ...market, dataOrigin: "demo" as const, verificationStatus: "unverified" as const })),
       forecasters: demoForecasters.map((forecaster) => ({ ...forecaster, dataOrigin: "demo" as const, verificationStatus: "unverified" as const, profileStatus: "unclaimed" as const })),
-      forecasts: demoForecasts.map((forecast) => ({ ...forecast, dataOrigin: "demo" as const, verificationStatus: "unverified" as const })),
+      forecasts: reconcileForecastOutcomes(
+        demoForecasts.map((forecast) => ({ ...forecast, dataOrigin: "demo" as const, verificationStatus: "unverified" as const })),
+        demoMarkets.map((market) => ({ ...market, dataOrigin: "demo" as const, verificationStatus: "unverified" as const }))
+      ),
       insights: demoInsights.map((insight) => ({ ...insight, dataOrigin: "demo" as const, verificationStatus: "unverified" as const })),
       probabilityHistory: demoProbabilityHistory
     };
@@ -43,13 +46,14 @@ export const getDataSet = cache(async (): Promise<DataSet> => {
 
   const base = await getConnectedBaseData();
   if (!base) throw new Error("Connected mode did not return Supabase data.");
+  const markets = base.marketRows.map(normalizeMarket);
   return {
     mode: "connected",
     categories: base.categoryRows.map(normalizeCategory),
     protocols: base.protocolRows.map(normalizeProtocol),
-    markets: base.marketRows.map(normalizeMarket),
+    markets,
     forecasters: base.forecasterRows.map(normalizeForecaster),
-    forecasts: base.forecastRows.map(normalizeForecast),
+    forecasts: reconcileForecastOutcomes(base.forecastRows.map(normalizeForecast), markets),
     insights: [],
     probabilityHistory: []
   };
